@@ -1,0 +1,518 @@
+[
+  {
+    "vehicleDescription": "Transport Trailers 4A 2002",
+    "fleetNumber": 1,
+    "regPlate": "589AT",
+    "rucPaidTo": 13002.0
+  },
+  {
+    "vehicleDescription": "Transfleet 4TDH-27 2004",
+    "fleetNumber": 4,
+    "regPlate": "E560P",
+    "rucPaidTo": 237005.0
+  },
+  {
+    "vehicleDescription": "Morgan Lowloader 1996",
+    "fleetNumber": 7,
+    "regPlate": "5578C",
+    "rucPaidTo": 32670.0
+  },
+  {
+    "vehicleDescription": "Toyota Hiace 2009",
+    "fleetNumber": 445,
+    "regPlate": "FDT602",
+    "rucPaidTo": 344012.0
+  },
+  {
+    "vehicleDescription": "Toyota Hiace 2013",
+    "fleetNumber": 448,
+    "regPlate": "GUR891",
+    "rucPaidTo": 263000.0
+  },
+  {
+    "vehicleDescription": "Ford Ranger 2010 4x2 XLT D/C W/S",
+    "fleetNumber": 463,
+    "regPlate": "FQC642",
+    "rucPaidTo": 268010.0
+  },
+  {
+    "vehicleDescription": "Ford Ranger 2015 4x2 XLT D/C W/S",
+    "fleetNumber": 465,
+    "regPlate": "JBB745",
+    "rucPaidTo": 284000.0
+  },
+  {
+    "vehicleDescription": "Ford Ranger 2011 4x2 XLT D/C W/S",
+    "fleetNumber": 469,
+    "regPlate": "GBP609",
+    "rucPaidTo": 321000.0
+  },
+  {
+    "vehicleDescription": "Ford Ranger 2011 4x2 XLT D/C W/S",
+    "fleetNumber": 470,
+    "regPlate": "FUB380",
+    "rucPaidTo": 312050.0
+  },
+  {
+    "vehicleDescription": "Ford Ranger 2010 4x2 XLT D/C W/S",
+    "fleetNumber": 471,
+    "regPlate": "FRM776",
+    "rucPaidTo": 316050.0
+  },
+  {
+    "vehicleDescription": "Toyota Hilux 2011 4x2 D/C W/S",
+    "fleetNumber": 476,
+    "regPlate": "GBN844",
+    "rucPaidTo": 384036.0
+  },
+  {
+    "vehicleDescription": "Ford Ranger 2018 4x2 XLT D/C W/S",
+    "fleetNumber": 486,
+    "regPlate": "LER932",
+    "rucPaidTo": 280001.0
+  },
+  {
+    "vehicleDescription": "Ford Ranger 2018 4x2 XLT D/C W/S",
+    "fleetNumber": 487,
+    "regPlate": "LER933",
+    "rucPaidTo": 200001.0
+  },
+  {
+    "vehicleDescription": "Ford Ranger 2018 4x2 XLT D/C W/S",
+    "fleetNumber": 488,
+    "regPlate": "LER937",
+    "rucPaidTo": 195000.0
+  },
+  {
+    "vehicleDescription": "Ford Ranger 2018 4x4 XLT D/C W/S",
+    "fleetNumber": 489,
+    "regPlate": "LER940",
+    "rucPaidTo": 245020.0
+  },
+  {
+    "vehicleDescription": "Ford Ranger 2018 4x4 XLT D/C W/S",
+    "fleetNumber": 490,
+    "regPlate": "LER936",
+    "rucPaidTo": 230012.0
+  },
+  {
+    "vehicleDescription": "Ford Ranger 2018 4x4 XLT D/C W/S",
+    "fleetNumber": 491,
+    "regPlate": "LGJ618",
+    "rucPaidTo": 220000.0
+  },
+  {
+    "vehicleDescription": "Ford Ranger 2018 4x2 XLT D/C W/S",
+    "fleetNumber": 492,
+    "regPlate": "LKZ964",
+    "rucPaidTo": 205002.0
+  },
+  {
+    "vehicleDescription": "Ford Ranger 2018 4x2 XLT D/C W/S",
+    "fleetNumber": 493,
+    "regPlate": "LJJ940",
+    "rucPaidTo": 230000.0
+  },
+  {
+    "vehicleDescription": "Ford Ranger 2013 4x2 XL D/C W/S",
+    "fleetNumber": 494,
+    "regPlate": "GSN851",
+    "rucPaidTo": 332010.0
+  },
+  {
+    "vehicleDescription": "Mazda BT-50 2013 4x2 GSX D/C W/S",
+    "fleetNumber": 495,
+    "regPlate": "GTH864",
+    "rucPaidTo": 254010.0
+  },
+  {
+    "vehicleDescription": "Ford Ranger 2015 4x4 Cabplus F/D",
+    "fleetNumber": 496,
+    "regPlate": "JYY52",
+    "rucPaidTo": 306766.0
+  },
+  {
+    "vehicleDescription": "Ford Ranger 2018 4x4 D/C W/S",
+    "fleetNumber": 499,
+    "regPlate": "LNW704",
+    "rucPaidTo": 215000.0
+  },
+  {
+    "vehicleDescription": "Mazda BT-50 2012 4x2 GLX Cabplus W/S",
+    "fleetNumber": 500,
+    "regPlate": "GNA826",
+    "rucPaidTo": 314010.0
+  },
+  {
+    "vehicleDescription": "Mazda BT-50 2012 4x2 GLX D/C W/S",
+    "fleetNumber": 501,
+    "regPlate": "GPR852",
+    "rucPaidTo": 188002.0
+  },
+  {
+    "vehicleDescription": "Ford Ranger 2019 4x2 XLT D/C W/S",
+    "fleetNumber": 502,
+    "regPlate": "MBF560",
+    "rucPaidTo": 220000.0
+  },
+  {
+    "vehicleDescription": "Ford Ranger 2014 4x2 XL D/C W/S",
+    "fleetNumber": 503,
+    "regPlate": "HHS395",
+    "rucPaidTo": 225000.0
+  },
+  {
+    "vehicleDescription": "Toyota Hilux 2014 4x2 D/C W/S",
+    "fleetNumber": 505,
+    "regPlate": "HQL909",
+    "rucPaidTo": 222000.0
+  },
+  {
+    "vehicleDescription": "Ford Ranger 2016 4x2 XL D/C W/S",
+    "fleetNumber": 508,
+    "regPlate": "JSC564",
+    "rucPaidTo": 300050.0
+  },
+  {
+    "vehicleDescription": "Ford Ranger 2020 4x2 XLT D/C W/S",
+    "fleetNumber": 509,
+    "regPlate": "MTZ279",
+    "rucPaidTo": 131000.0
+  },
+  {
+    "vehicleDescription": "Ford Ranger 2020 4x2 XLT D/C W/S",
+    "fleetNumber": 510,
+    "regPlate": "MTZ278",
+    "rucPaidTo": 136000.0
+  },
+  {
+    "vehicleDescription": "Ford Ranger 2016 4x2 XL D/C W/S",
+    "fleetNumber": 511,
+    "regPlate": "KCU68",
+    "rucPaidTo": 206000.0
+  },
+  {
+    "vehicleDescription": "Ford Ranger 2015 4x2 XL D/C W/S",
+    "fleetNumber": 512,
+    "regPlate": "HYN614",
+    "rucPaidTo": 225020.0
+  },
+  {
+    "vehicleDescription": "Ford Ranger 2020 4x2 XLT D/C W/S",
+    "fleetNumber": 513,
+    "regPlate": "MWR962",
+    "rucPaidTo": 161012.0
+  },
+  {
+    "vehicleDescription": "Mazda BT-50 2018 4x2 GLX Cabplus F/D",
+    "fleetNumber": 514,
+    "regPlate": "LFW259",
+    "rucPaidTo": 150000.0
+  },
+  {
+    "vehicleDescription": "Ford Ranger 2020 4x4 XLT D/C W/S",
+    "fleetNumber": 515,
+    "regPlate": "NAJ997",
+    "rucPaidTo": 126000.0
+  },
+  {
+    "vehicleDescription": "Toyota Corolla 2020 SX Hybrid",
+    "fleetNumber": 516,
+    "regPlate": "NHQ894",
+    "rucPaidTo": 0
+  },
+  {
+    "vehicleDescription": "Ford Ranger 2021 4x2 XLT D/C W/S",
+    "fleetNumber": 517,
+    "regPlate": "NNM799",
+    "rucPaidTo": 93000.0
+  },
+  {
+    "vehicleDescription": "Ford Ranger 2021 4x2 XLT D/C W/S",
+    "fleetNumber": 518,
+    "regPlate": "NQS995",
+    "rucPaidTo": 108000.0
+  },
+  {
+    "vehicleDescription": "Ford Ranger 2021 4x2 XLT D/C W/S",
+    "fleetNumber": 519,
+    "regPlate": "NQS996",
+    "rucPaidTo": 133000.0
+  },
+  {
+    "vehicleDescription": "Ford Ranger 2021 4x4 XLT D/C W/S",
+    "fleetNumber": 520,
+    "regPlate": "NRJ849",
+    "rucPaidTo": 126000.0
+  },
+  {
+    "vehicleDescription": "Ford Ranger 2021 4x4 XLT D/C W/S",
+    "fleetNumber": 521,
+    "regPlate": "NRJ851",
+    "rucPaidTo": 143000.0
+  },
+  {
+    "vehicleDescription": "Ford Ranger 2021 4x2 XLT D/C W/S",
+    "fleetNumber": 522,
+    "regPlate": "NSR530",
+    "rucPaidTo": 86000.0
+  },
+  {
+    "vehicleDescription": "Ford Ranger 2021 4x2 XLT D/C W/S",
+    "fleetNumber": 523,
+    "regPlate": "NSR531",
+    "rucPaidTo": 86000.0
+  },
+  {
+    "vehicleDescription": "Toyota Hilux 2022 4x2 SR D/C W/S",
+    "fleetNumber": 524,
+    "regPlate": "NZF473",
+    "rucPaidTo": 91006.0
+  },
+  {
+    "vehicleDescription": "Toyota Hilux 2022 4x2 SR D/C W/S",
+    "fleetNumber": 525,
+    "regPlate": "NZW104",
+    "rucPaidTo": 131009.0
+  },
+  {
+    "vehicleDescription": "Toyota Hilux 2022 4x2 SR D/C W/S",
+    "fleetNumber": 526,
+    "regPlate": "NZW118",
+    "rucPaidTo": 86010.0
+  },
+  {
+    "vehicleDescription": "Toyota Hilux 2022 4x2 SR D/C W/S",
+    "fleetNumber": 527,
+    "regPlate": "PAP496",
+    "rucPaidTo": 91000.0
+  },
+  {
+    "vehicleDescription": "Toyota Hilux 2022 4x2 SR D/C W/S",
+    "fleetNumber": 528,
+    "regPlate": "PCE760",
+    "rucPaidTo": 71000.0
+  },
+  {
+    "vehicleDescription": "Tesla Model X 2020 4WD",
+    "fleetNumber": 529,
+    "regPlate": "PCQ1",
+    "rucPaidTo": 132700.0
+  },
+  {
+    "vehicleDescription": "Toyota Hilux 2019 4x2 SR D/C W/S",
+    "fleetNumber": 530,
+    "regPlate": "MAR717",
+    "rucPaidTo": 144000.0
+  },
+  {
+    "vehicleDescription": "Isuzu D-Max 2013 4X2 LS D/C W/S",
+    "fleetNumber": 531,
+    "regPlate": "GUJ411",
+    "rucPaidTo": 317002.0
+  },
+  {
+    "vehicleDescription": "BYD Atto 3 2023 Extended Range",
+    "fleetNumber": 532,
+    "regPlate": "QAJ980",
+    "rucPaidTo": 43037.0
+  },
+  {
+    "vehicleDescription": "BYD Atto 3 2023 Extended Range",
+    "fleetNumber": 533,
+    "regPlate": "QAU621",
+    "rucPaidTo": 25306.0
+  },
+  {
+    "vehicleDescription": "Tesla Model Y 2023",
+    "fleetNumber": 534,
+    "regPlate": "QFC57",
+    "rucPaidTo": 36965.0
+  },
+  {
+    "vehicleDescription": "Tesla Model Y 2023",
+    "fleetNumber": 535,
+    "regPlate": "QFC58",
+    "rucPaidTo": 44618.0
+  },
+  {
+    "vehicleDescription": "Tesla Model Y 2023",
+    "fleetNumber": 536,
+    "regPlate": "QFC71",
+    "rucPaidTo": 75350.0
+  },
+  {
+    "vehicleDescription": "Toyota Hilux 2024 4x2 SR D/C W/S",
+    "fleetNumber": 537,
+    "regPlate": "QJZ870",
+    "rucPaidTo": 51012.0
+  },
+  {
+    "vehicleDescription": "Toyota Hilux 2024 4x2 SR D/C W/S",
+    "fleetNumber": 538,
+    "regPlate": "QJZ871",
+    "rucPaidTo": 56000.0
+  },
+  {
+    "vehicleDescription": "Toyota Hilux 2024 4x2 SR D/C W/S",
+    "fleetNumber": 539,
+    "regPlate": "QJZ872",
+    "rucPaidTo": 36000.0
+  },
+  {
+    "vehicleDescription": "Toyota Hilux 2024 4x2 SR D/C W/S",
+    "fleetNumber": 540,
+    "regPlate": "QJZ873",
+    "rucPaidTo": 46011.0
+  },
+  {
+    "vehicleDescription": "Tesla Model Y 2024",
+    "fleetNumber": 541,
+    "regPlate": "QJG431",
+    "rucPaidTo": 59420.0
+  },
+  {
+    "vehicleDescription": "Toyota Hilux 2024 SR 2.8DT 6MT 4WD",
+    "fleetNumber": 542,
+    "regPlate": "QTB354",
+    "rucPaidTo": 36010.0
+  },
+  {
+    "vehicleDescription": "Tesla Model Y 2024",
+    "fleetNumber": 543,
+    "regPlate": "QMT235",
+    "rucPaidTo": 26009.0
+  },
+  {
+    "vehicleDescription": "Tesla Model Y 2024",
+    "fleetNumber": 544,
+    "regPlate": "QMT236",
+    "rucPaidTo": 36009.0
+  },
+  {
+    "vehicleDescription": "BYD Atto 3 2023 Extended Range",
+    "fleetNumber": 545,
+    "regPlate": "QHD437",
+    "rucPaidTo": 17319.0
+  },
+  {
+    "vehicleDescription": "BYD Shark 6 2025 AWD D/C W/S",
+    "fleetNumber": 546,
+    "regPlate": "RBL829",
+    "rucPaidTo": 23000.0
+  },
+  {
+    "vehicleDescription": "BYD Shark 6 2025 AWD D/C W/S",
+    "fleetNumber": 547,
+    "regPlate": "RBL830",
+    "rucPaidTo": 13000.0
+  },
+  {
+    "vehicleDescription": "Tesla Model Y 2022",
+    "fleetNumber": 548,
+    "regPlate": "PPU192",
+    "rucPaidTo": 13900.0
+  },
+  {
+    "vehicleDescription": "Toyota Hilux 2025 4x2 SR D/C W/S",
+    "fleetNumber": 549,
+    "regPlate": "RET187",
+    "rucPaidTo": 11010.0
+  },
+  {
+    "vehicleDescription": "Toyota Hilux 2025 4x2 SR D/C W/S",
+    "fleetNumber": 550,
+    "regPlate": "RET188",
+    "rucPaidTo": 6010.0
+  },
+  {
+    "vehicleDescription": "Toyota Hilux 2025 4x2 SR D/C W/S",
+    "fleetNumber": 551,
+    "regPlate": "RET189",
+    "rucPaidTo": 6010.0
+  },
+  {
+    "vehicleDescription": "BYD Shark 6 2025 AWD D/C W/S",
+    "fleetNumber": 552,
+    "regPlate": "RFN414",
+    "rucPaidTo": 0
+  },
+  {
+    "vehicleDescription": "Isuzu CYZ 460 Giga 2008",
+    "fleetNumber": 601,
+    "regPlate": "PWG214",
+    "rucPaidTo": 347700.0
+  },
+  {
+    "vehicleDescription": "Hino GD 2003",
+    "fleetNumber": 602,
+    "regPlate": "BHR201",
+    "rucPaidTo": 69400.0
+  },
+  {
+    "vehicleDescription": "Isuzu Elf NRR 1999",
+    "fleetNumber": 603,
+    "regPlate": "DYJ738",
+    "rucPaidTo": 16900.0
+  },
+  {
+    "vehicleDescription": "Isuzu CYZ400 2015",
+    "fleetNumber": 607,
+    "regPlate": "JHU122",
+    "rucPaidTo": 277400.0
+  },
+  {
+    "vehicleDescription": "Isuzu FVZ1400M 2015",
+    "fleetNumber": 608,
+    "regPlate": "JHU139",
+    "rucPaidTo": 25800.0
+  },
+  {
+    "vehicleDescription": "Isuzu FVZ1400A 2016",
+    "fleetNumber": 609,
+    "regPlate": "JRT503",
+    "rucPaidTo": 8001.0
+  },
+  {
+    "vehicleDescription": "Hino 300 2009",
+    "fleetNumber": 610,
+    "regPlate": "LDM30",
+    "rucPaidTo": 57700.0
+  },
+  {
+    "vehicleDescription": "Isuzu Forward FRR90S1 2016 Tipper",
+    "fleetNumber": 611,
+    "regPlate": "LWM567",
+    "rucPaidTo": 30200.0
+  },
+  {
+    "vehicleDescription": "Isuzu NPR450 2019 Crew Tipper",
+    "fleetNumber": 612,
+    "regPlate": "MDP124",
+    "rucPaidTo": 40100.0
+  },
+  {
+    "vehicleDescription": "Isuzu NPR325 4x2 2020",
+    "fleetNumber": 613,
+    "regPlate": "NBP791",
+    "rucPaidTo": 71300.0
+  },
+  {
+    "vehicleDescription": "Isuzu CYZ400 2022",
+    "fleetNumber": 615,
+    "regPlate": "PHE415",
+    "rucPaidTo": 69200.0
+  },
+  {
+    "vehicleDescription": "Isuzu CYZ420 2023",
+    "fleetNumber": 616,
+    "regPlate": "QFD256",
+    "rucPaidTo": 5003.0
+  },
+  {
+    "vehicleDescription": "Mitsubishi Fuso Fighter FK200K6 2007",
+    "fleetNumber": 3414,
+    "regPlate": "DUB352",
+    "rucPaidTo": 17000.0
+  }
+]
