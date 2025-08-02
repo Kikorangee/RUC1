@@ -2,19 +2,15 @@
   "name": "RUC License Management",
   "supportEmail": "Francis@directt.co.nz",
   "version": "1.0.0",
-  "items": [{
-    "page": "rucLicenseManagement",
-    "click": "rucLicenseManagement",
-    "menuName": {
-      "en": "RUC License Management"
-    },
-    "icon": "rucLicenseManagement",
-    "version": "1.0.0"
-  }],
-  "files": {
-    "rucLicenseManagement.html": "https://YOUR-GITHUB-USERNAME.github.io/RUC1/RUC_AddIn/index.html",
-    "rucLicenseManagement.css": "https://YOUR-GITHUB-USERNAME.github.io/RUC1/RUC_AddIn/style.css",
-    "rucLicenseManagement.js": "https://YOUR-GITHUB-USERNAME.github.io/RUC1/RUC_AddIn/main.js"
-  },
-  "key": "RUC-LICENSE-MGMT-2025"
+  "items": [
+    {
+      "url": "https://Kikorangee.github.io/RUC1/RUC_AddIn/index.html",
+      "path": "RUCLicenseManagement/",
+      "menuName": {
+        "en": "RUC License Management"
+      },
+      "icon": "https://Kikorangee.github.io/RUC1/RUC_AddIn/ruc-icon.svg"
+    }
+  ],
+  "isSigned": false
 }

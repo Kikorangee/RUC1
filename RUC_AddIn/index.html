@@ -2,130 +2,61 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>RUC Details</title>
+    <title>RUC License Management</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="loading" class="text-center">
-        <div class="spinner-container">
-            <div class="spinner"></div>
-            <p>Loading vehicle RUC data...</p>
+    <div style="padding: 20px; font-family: Arial, sans-serif; background: #f8f9fa; min-height: 100vh;">
+        <div style="max-width: 1200px; margin: 0 auto;">
+            <h1 style="color: #28a745; text-align: center; margin-bottom: 30px;">RUC License Management</h1>
+            
+            <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px;">
+                <h3 style="margin: 0; color: #495057;">Status: <span id="status" style="color: #007bff;">Loading...</span></h3>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px;">
+                <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center;">
+                    <h4 style="margin: 0 0 10px 0; color: #6c757d;">Total Vehicles</h4>
+                    <div id="total" style="font-size: 24px; font-weight: bold; color: #28a745;">--</div>
+                </div>
+                <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center;">
+                    <h4 style="margin: 0 0 10px 0; color: #6c757d;">Active Licenses</h4>
+                    <div id="active" style="font-size: 24px; font-weight: bold; color: #007bff;">--</div>
+                </div>
+                <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center;">
+                    <h4 style="margin: 0 0 10px 0; color: #6c757d;">Alerts</h4>
+                    <div style="font-size: 24px; font-weight: bold; color: #ffc107;">0</div>
+                </div>
+            </div>
+            
+            <div style="background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden;">
+                <div style="padding: 20px; border-bottom: 1px solid #dee2e6;">
+                    <h3 style="margin: 0; color: #495057;">Vehicle Fleet</h3>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead style="background: #f8f9fa;">
+                            <tr>
+                                <th style="padding: 15px; text-align: left; border-bottom: 2px solid #dee2e6;">Vehicle</th>
+                                <th style="padding: 15px; text-align: left; border-bottom: 2px solid #dee2e6;">Fleet #</th>
+                                <th style="padding: 15px; text-align: left; border-bottom: 2px solid #dee2e6;">Registration</th>
+                                <th style="padding: 15px; text-align: right; border-bottom: 2px solid #dee2e6;">RUC Paid To</th>
+                                <th style="padding: 15px; text-align: center; border-bottom: 2px solid #dee2e6;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vehicle-list">
+                            <tr><td colspan="5" style="padding: 40px; text-align: center; color: #6c757d;">Loading vehicles...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div id="error-message" style="display: none; background: #f8d7da; color: #721c24; padding: 15px; border-radius: 5px; margin-top: 20px;"></div>
         </div>
     </div>
 
-    <div id="error-message" class="alert alert-danger" style="display:none;"></div>
-
-    <div id="rucAddin" style="display:none;">
-        <h2>Vehicle RUC Details</h2>
-        <p>This list shows the latest RUC status logs for your vehicles.</p>
-        <table class="table table-striped table-bordered">
-            <thead>
-                <tr>
-                    <th>Vehicle</th>
-                    <th>Last RUC Log Date</th>
-                    <th>Odometer (km)</th>
-                    <th>Distance (km)</th>
-                    <th>RUC Label Number</th>
-                </tr>
-            </thead>
-            <tbody id="ruc-table-body">
-            </tbody>
-        </table>
-    </div>
-
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-
-    <script>
-        console.log("RUC script starting...");
-        
-        geotab.addin.ruc = function (api, state) {
-            'use strict';
-            console.log("RUC add-in function called");
-            console.log("API object:", api);
-            console.log("State object:", state);
-            console.log("User groups:", state.getGroups());
-
-            const loadRucData = async () => {
-                try {
-                    console.log("RUC: Starting loadRucData function");
-                    console.log("RUC: API available:", !!api);
-                    console.log("RUC: State available:", !!state);
-                    
-                    // Show loading
-                    $('#loading').show();
-                    $('#rucAddin').hide();
-                    $('#error-message').hide();
-                    
-                    console.log("RUC: Getting devices from Geotab API...");
-                    
-                    const devices = await api.call("Get", {
-                        typeName: "Device",
-                        search: {
-                            groups: state.getGroups()
-                        }
-                    });
-
-                    console.log("RUC: API call completed");
-                    console.log("RUC: Found devices:", devices.length);
-
-                    if (!devices || devices.length === 0) {
-                        console.log("RUC: No devices found");
-                        $('#loading').hide();
-                        $('#rucAddin').show();
-                        $('#ruc-table-body').html('<tr><td colspan="5">No vehicles found in your scope.</td></tr>');
-                        return;
-                    }
-
-                    let tableContent = '';
-                    for (const vehicle of devices) {
-                        console.log("RUC: Processing vehicle:", vehicle.name);
-                        tableContent += `
-                            <tr>
-                                <td><strong>${vehicle.name}</strong></td>
-                                <td>No RUC logs yet</td>
-                                <td>--</td>
-                                <td>--</td>
-                                <td>${vehicle.licensePlate || '--'}</td>
-                            </tr>
-                        `;
-                    }
-                    
-                    console.log("RUC: Updating table with", devices.length, "vehicles");
-                    $('#ruc-table-body').html(tableContent);
-                    $('#loading').hide();
-                    $('#rucAddin').show();
-                    console.log("RUC: Table updated successfully");
-
-                } catch (error) {
-                    console.error("RUC: Error loading data:", error);
-                    $('#loading').hide();
-                    $('#error-message').text('Error: ' + error.message).show();
-                }
-            };
-
-            return {
-                initialize: function (api, state, callback) {
-                    console.log("RUC: Initialize function called");
-                    console.log("RUC: API object:", !!api);
-                    console.log("RUC: State object:", !!state);
-                    loadRucData();
-                    if (callback) {
-                        console.log("RUC: Calling callback");
-                        callback();
-                    }
-                },
-                focus: function (api, state) {
-                    console.log("RUC: Focus function called");
-                },
-                blur: function () {
-                    console.log("RUC: Blur function called");
-                }
-            };
-        };
-        
-        console.log("RUC script loaded completely");
-
-    </script>
+    <script src="main.js"></script>
 </body>
 </html>
