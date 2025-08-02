@@ -360,7 +360,9 @@ geotab.addin.ruc = function(api, state) {
                             <td><strong>${vehicle.regPlate}</strong></td>
                             <td style="text-align: right;">
                                 ${vehicle.rucPaidTo.toLocaleString()} km
-                                ${remainingKm > 0 ? `<br><small class="text-muted">${remainingKm.toLocaleString()} km remaining</small>` : ''}
+                            </td>
+                            <td style="text-align: right;">
+                                ${remainingKm > 0 ? `${remainingKm.toLocaleString()} km` : '<span style="color: #dc3545; font-weight: bold;">EXPIRED</span>'}
                             </td>
                             <td style="text-align: center;">
                                 <span class="status-badge ${statusClass}">${statusText}</span>
