@@ -14,15 +14,36 @@ geotab.addin.ruc = function(api, state) {
             const timestamp = new Date().getTime();
             const dataUrl = `https://kikorangee.github.io/RUC1/RUC_AddIn/RUC_Data.json?v=${timestamp}`;
             console.log(`Loading RUC data from: ${dataUrl}`);
+            
             const response = await fetch(dataUrl);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+            
+            // Check if response exists and is ok
+            if (!response) {
+                throw new Error('No response received from server');
             }
-            rucData = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            
+            if (!data || !Array.isArray(data)) {
+                throw new Error('Invalid data format received - expected array');
+            }
+            
+            rucData = data;
             console.log(`Successfully loaded ${rucData.length} vehicles from RUC_Data.json`);
             return rucData;
+            
         } catch (error) {
             console.error('Error loading RUC data:', error);
+            console.error('Error details:', {
+                message: error.message,
+                stack: error.stack,
+                name: error.name
+            });
+            
             // Fallback to empty array if file can't be loaded
             rucData = [];
             return [];
