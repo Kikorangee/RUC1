@@ -131,12 +131,37 @@ geotab.addin.ruc = function(api, state) {
     const matchDevicesWithRucData = (devices, rucData) => {
         const matched = [];
         
+        console.log(`Attempting to match ${rucData.length} RUC vehicles with ${devices.length} Geotab devices`);
+        
         for (const rucVehicle of rucData) {
-            // Try to find matching Geotab device by registration plate
-            const matchedDevice = devices.find(device => 
-                device.licensePlate && 
-                device.licensePlate.toLowerCase() === rucVehicle.regPlate.toLowerCase()
-            );
+            // Try to find matching Geotab device by fleet number
+            const matchedDevice = devices.find(device => {
+                // Check if device name contains the fleet number
+                if (device.name && device.name.includes(rucVehicle.fleetNumber.toString())) {
+                    return true;
+                }
+                
+                // Check if device has a custom property with fleet number
+                if (device.groups && device.groups.some(group => 
+                    group.name && group.name.includes(rucVehicle.fleetNumber.toString())
+                )) {
+                    return true;
+                }
+                
+                // Check serial number or other identifiers
+                if (device.serialNumber && device.serialNumber.includes(rucVehicle.fleetNumber.toString())) {
+                    return true;
+                }
+                
+                return false;
+            });
+            
+            // Log matching attempts for debugging
+            if (matchedDevice) {
+                console.log(`✓ Matched Fleet #${rucVehicle.fleetNumber} (${rucVehicle.regPlate}) with Geotab device: ${matchedDevice.name}`);
+            } else {
+                console.warn(`✗ No Geotab device found for Fleet #${rucVehicle.fleetNumber} (${rucVehicle.regPlate})`);
+            }
 
             matched.push({
                 ...rucVehicle,
@@ -145,6 +170,9 @@ geotab.addin.ruc = function(api, state) {
             });
         }
 
+        const matchedCount = matched.filter(v => v.hasGeotabData).length;
+        console.log(`Successfully matched ${matchedCount} out of ${rucData.length} vehicles with Geotab devices`);
+        
         return matched;
     };
 
