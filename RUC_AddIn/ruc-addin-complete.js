@@ -400,10 +400,17 @@ geotab.addin.ruc = function(api, state) {
                             </td>
                             <td style="text-align: center;">
                                 <span class="status-badge ${statusClass}">${statusText}</span>
-                                ${vehicle.rucStatus.status !== 'ok' ? 
-                                    `<br><button class="btn-renew" onclick="window.renewLicense('${vehicle.regPlate}')" style="margin-top: 8px;">Renew</button>` : 
-                                    ''
-                                }
+                                <br>
+                                <div style="margin-top: 8px;">
+                                    ${vehicle.hasGeotabData ? 
+                                        `<button class="btn-refresh-odometer" onclick="window.refreshOdometer('${vehicle.regPlate}')" style="background: #17a2b8; color: white; border: none; padding: 4px 8px; border-radius: 3px; font-size: 11px; margin-right: 4px;">Refresh Odometer</button>` : 
+                                        ''
+                                    }
+                                    ${vehicle.rucStatus.status !== 'ok' ? 
+                                        `<button class="btn-renew" onclick="window.renewLicense('${vehicle.regPlate}')" style="background: #28a745; color: white; border: none; padding: 4px 8px; border-radius: 3px; font-size: 11px;">Renew</button>` : 
+                                        ''
+                                    }
+                                </div>
                             </td>
                         </tr>
                     `;
@@ -443,6 +450,60 @@ geotab.addin.ruc = function(api, state) {
         const vehicle = vehicles.find(v => v.regPlate === regPlate);
         if (vehicle) {
             showRenewalModal(vehicle);
+        }
+    };
+
+    // Global function for refresh odometer button
+    window.refreshOdometer = async (regPlate) => {
+        const vehicle = vehicles.find(v => v.regPlate === regPlate);
+        if (vehicle && vehicle.hasGeotabData) {
+            console.log(`Manually refreshing odometer for ${regPlate}...`);
+            
+            // Show loading state for this specific button
+            const button = document.querySelector(`button[onclick="window.refreshOdometer('${regPlate}')"]`);
+            if (button) {
+                const originalText = button.textContent;
+                button.textContent = 'Loading...';
+                button.disabled = true;
+            }
+            
+            try {
+                // Get fresh odometer reading
+                const newOdometer = await getCurrentOdometer(vehicle.geotabDevice.id);
+                
+                if (newOdometer !== null) {
+                    vehicle.currentOdometer = newOdometer;
+                    vehicle.hasOdometerData = true;
+                    console.log(`Updated odometer for ${regPlate}: ${newOdometer} km`);
+                } else {
+                    vehicle.hasOdometerData = false;
+                    vehicle.currentOdometer = 0;
+                    console.warn(`Still no odometer data available for ${regPlate}`);
+                }
+                
+                // Recalculate RUC status
+                vehicle.rucStatus = calculateRucStatus(vehicle.currentOdometer, vehicle.rucPaidTo);
+                
+                // Refresh the entire table to show updated data
+                loadAndDisplayData();
+                
+                // Show success message
+                if (newOdometer !== null) {
+                    showSuccessMessage(`Odometer refreshed for ${regPlate}: ${newOdometer.toLocaleString()} km`);
+                } else {
+                    showSuccessMessage(`Odometer refresh attempted for ${regPlate} - no data available from Geotab API`);
+                }
+                
+            } catch (error) {
+                console.error(`Error refreshing odometer for ${regPlate}:`, error);
+                showSuccessMessage(`Error refreshing odometer for ${regPlate}: ${error.message}`);
+                
+                // Re-enable button on error
+                if (button) {
+                    button.textContent = originalText;
+                    button.disabled = false;
+                }
+            }
         }
     };
 
