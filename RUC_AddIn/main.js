@@ -1,591 +1,334 @@
-/**
- * RUC License Management Add-In for MyGeotab
- * Monitors Road User Charge licenses and provides renewal functionality
- */
-
+// COMPREHENSIVE DEBUG VERSION - Enhanced logging for troubleshooting
 "use strict";
 
-// Global variables
+// Enable comprehensive logging
+console.log("=== DEBUG MODE ENABLED ===");
+console.log("Timestamp:", new Date().toISOString());
+
 let fleetData = [];
 let geotabApi = null;
-let currentUser = null;
-let refreshInterval = null;
-let selectedVehicleIndex = null;
+let debugLog = [];
 
-// Constants
-const ALERT_THRESHOLD = 2000; // km before expiry when alert should trigger
-const REFRESH_INTERVAL = 5 * 60 * 1000; // refresh every 5 minutes
-const ODOMETER_DIAGNOSTIC_ID = "DiagnosticOdometerId";
-
-// Utility Functions
-function formatNumber(num) {
-    return new Intl.NumberFormat().format(Math.round(num));
-}
-
-function formatDateTime(date) {
-    return new Intl.DateTimeFormat('en-NZ', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    }).format(date);
-}
-
-function showError(message) {
-    const errorContainer = document.getElementById("errorContainer");
-    const errorMessage = document.getElementById("errorMessage");
-    errorMessage.textContent = message;
-    errorContainer.classList.remove("hidden");
+function logDebug(message, data = null) {
+    const timestamp = new Date().toISOString();
+    const logEntry = `[${timestamp}] ${message}`;
+    console.log(logEntry, data || '');
+    debugLog.push(logEntry + (data ? ': ' + JSON.stringify(data) : ''));
     
-    // Auto-hide after 10 seconds
-    setTimeout(() => {
-        hideError();
-    }, 10000);
+    // Update debug display if available
+    updateDebugDisplay();
 }
 
-function hideError() {
-    const errorContainer = document.getElementById("errorContainer");
-    errorContainer.classList.add("hidden");
-}
-
-function showLoading() {
-    const loadingOverlay = document.getElementById("loadingOverlay");
-    loadingOverlay.classList.remove("hidden");
-}
-
-function hideLoading() {
-    const loadingOverlay = document.getElementById("loadingOverlay");
-    loadingOverlay.classList.add("hidden");
-}
-
-function updateConnectionStatus(connected) {
-    const statusElement = document.getElementById("connectionStatus");
-    if (connected) {
-        statusElement.textContent = "Connected";
-        statusElement.className = "status-connected";
-    } else {
-        statusElement.textContent = "Disconnected";
-        statusElement.className = "status-disconnected";
+function updateDebugDisplay() {
+    const debugElement = document.getElementById('debug-output');
+    if (debugElement) {
+        debugElement.innerHTML = debugLog.map(log => `<div>${log}</div>`).join('');
+        debugElement.scrollTop = debugElement.scrollHeight;
     }
 }
 
-function updateLastUpdated() {
-    const lastUpdatedElement = document.getElementById("lastUpdated");
-    lastUpdatedElement.textContent = `Last Updated: ${formatDateTime(new Date())}`;
+function initialize(api, state, callback) {
+    logDebug("=== INITIALIZE FUNCTION CALLED ===");
+    logDebug("API object received", api ? "YES" : "NO");
+    logDebug("State object received", state ? "YES" : "NO");
+    logDebug("Callback function received", callback ? "YES" : "NO");
+    
+    geotabApi = api;
+    
+    if (state && state.user) {
+        logDebug("User information", state.user.name);
+    }
+    
+    try {
+        logDebug("Setting up page structure...");
+        setupPage();
+        
+        logDebug("Starting data loading process...");
+        loadFleetData();
+        
+    } catch (error) {
+        logDebug("ERROR in initialize function", error.message);
+        console.error("Initialize error:", error);
+    }
+    
+    if (callback) {
+        logDebug("Calling callback function...");
+        callback();
+    }
+    
+    logDebug("=== INITIALIZE FUNCTION COMPLETED ===");
 }
 
-// Data Management Functions
-function loadFleetData() {
-    return new Promise((resolve, reject) => {
-        // Check if localStorage has updated fleet data
-        const savedData = localStorage.getItem("rucFleetData");
-        if (savedData) {
-            try {
-                fleetData = JSON.parse(savedData);
-                console.log("Loaded fleet data from localStorage:", fleetData.length, "vehicles");
-                resolve(fleetData);
-                return;
-            } catch (error) {
-                console.warn("Failed to parse saved fleet data, loading from file");
-            }
-        }
+function setupPage() {
+    logDebug("Creating page HTML structure...");
+    
+    document.body.innerHTML = `
+        <div style="padding: 20px; font-family: Arial, sans-serif;">
+            <h1 style="color: #28a745;">RUC License Management - DEBUG MODE</h1>
+            
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 10px 0;">
+                <h3>Status: <span id="status">Initializing...</span></h3>
+                <div id="progress-bar" style="background: #e9ecef; height: 20px; border-radius: 10px; margin: 10px 0;">
+                    <div id="progress-fill" style="background: #28a745; height: 100%; width: 10%; border-radius: 10px; transition: width 0.3s;"></div>
+                </div>
+            </div>
+            
+            <div style="background: #fff3cd; padding: 15px; border-radius: 5px; margin: 10px 0;">
+                <h4>Debug Console Output:</h4>
+                <div id="debug-output" style="background: #343a40; color: #f8f9fa; padding: 10px; border-radius: 3px; height: 200px; overflow-y: auto; font-family: monospace; font-size: 12px;"></div>
+                <button onclick="copyDebugLog()" style="background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 3px; margin-top: 10px; cursor: pointer;">Copy Debug Log</button>
+            </div>
+            
+            <div id="data-container" style="margin: 20px 0;"></div>
+            
+            <div id="error-container" style="display: none; background: #f8d7da; padding: 15px; border-radius: 5px; color: #721c24; margin: 10px 0;">
+                <h4>Error Details:</h4>
+                <div id="error-message"></div>
+            </div>
+        </div>
+    `;
+    
+    updateDebugDisplay();
+    logDebug("Page structure created successfully");
+}
 
-        // Load from JSON file - FIXED: Use full GitHub Pages URL
-        fetch("https://kikorangee.github.io/RUC1/RUC_AddIn/RUC_Data.json")
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                fleetData = data.map(vehicle => ({
+function updateProgress(percentage, statusText) {
+    const statusElement = document.getElementById('status');
+    const progressFill = document.getElementById('progress-fill');
+    
+    if (statusElement) statusElement.textContent = statusText;
+    if (progressFill) progressFill.style.width = percentage + '%';
+    
+    logDebug(`Progress: ${percentage}% - ${statusText}`);
+}
+
+function loadFleetData() {
+    logDebug("=== STARTING DATA LOADING PROCESS ===");
+    updateProgress(20, "Preparing to fetch data...");
+    
+    const dataUrl = "https://kikorangee.github.io/RUC1/RUC_AddIn/RUC_Data.json";
+    logDebug("Data URL", dataUrl);
+    
+    updateProgress(30, "Connecting to GitHub Pages...");
+    
+    fetch(dataUrl)
+        .then(response => {
+            logDebug("Fetch response received");
+            logDebug("Response status", response.status);
+            logDebug("Response status text", response.statusText);
+            logDebug("Response headers", Object.fromEntries(response.headers.entries()));
+            
+            updateProgress(50, "Response received, parsing JSON...");
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            return response.json();
+        })
+        .then(data => {
+            logDebug("JSON parsing successful");
+            logDebug("Data type", typeof data);
+            logDebug("Data is array", Array.isArray(data));
+            logDebug("Data length", data.length);
+            
+            if (data.length > 0) {
+                logDebug("First vehicle sample", data[0]);
+            }
+            
+            updateProgress(70, "Processing vehicle data...");
+            
+            fleetData = data.map((vehicle, index) => {
+                const processedVehicle = {
                     ...vehicle,
                     currentOdometer: 0,
                     remainingKm: vehicle.rucPaidTo,
                     lastUpdated: null,
-                    deviceId: null // Will be populated when we find matching devices
-                }));
-
-                // Save initial data to localStorage
-                localStorage.setItem("rucFleetData", JSON.stringify(fleetData));
-                console.log("Loaded fleet data from file:", fleetData.length, "vehicles");
-                resolve(fleetData);
-            })
-            .catch(error => {
-                console.error("Failed to load fleet data:", error);
-                reject(error);
+                    deviceId: null
+                };
+                
+                if (index < 3) {
+                    logDebug(`Processed vehicle ${index + 1}`, processedVehicle);
+                }
+                
+                return processedVehicle;
             });
-    });
-}
-
-function saveFleetData() {
-    try {
-        localStorage.setItem("rucFleetData", JSON.stringify(fleetData));
-        console.log("Fleet data saved to localStorage");
-    } catch (error) {
-        console.error("Failed to save fleet data:", error);
-    }
-}
-
-// Geotab API Functions
-async function getDevices() {
-    if (!geotabApi) {
-        throw new Error("Geotab API not available");
-    }
-
-    try {
-        const devices = await geotabApi.call("Get", {
-            typeName: "Device"
-        });
-        console.log("Retrieved", devices.length, "devices from Geotab");
-        return devices;
-    } catch (error) {
-        console.error("Failed to get devices:", error);
-        throw error;
-    }
-}
-
-async function getOdometerData(deviceId, fromDate = null) {
-    if (!geotabApi || !deviceId) {
-        return null;
-    }
-
-    try {
-        const searchParams = {
-            deviceSearch: { id: deviceId },
-            diagnosticSearch: { id: ODOMETER_DIAGNOSTIC_ID }
-        };
-
-        // If no fromDate specified, get data from last 24 hours
-        if (!fromDate) {
-            const yesterday = new Date();
-            yesterday.setDate(yesterday.getDate() - 1);
-            searchParams.fromDate = yesterday.toISOString();
-        } else {
-            searchParams.fromDate = fromDate;
-        }
-
-        searchParams.toDate = new Date().toISOString();
-
-        const statusData = await geotabApi.call("Get", {
-            typeName: "StatusData",
-            search: searchParams
-        });
-
-        if (statusData && statusData.length > 0) {
-            // Get the most recent odometer reading
-            const latestReading = statusData[statusData.length - 1];
-            return {
-                value: latestReading.data,
-                dateTime: new Date(latestReading.dateTime),
-                deviceId: deviceId
-            };
-        }
-
-        return null;
-    } catch (error) {
-        console.error(`Failed to get odometer data for device ${deviceId}:`, error);
-        return null;
-    }
-}
-
-// Device Matching Functions
-function matchVehiclesToDevices(devices) {
-    let matchedCount = 0;
-
-    fleetData.forEach(vehicle => {
-        // Try to match by registration plate or fleet number
-        const matchedDevice = devices.find(device => {
-            // Check if device name contains registration plate
-            if (device.name && vehicle.regPlate) {
-                const deviceName = device.name.toLowerCase();
-                const regPlate = vehicle.regPlate.toLowerCase();
-                if (deviceName.includes(regPlate) || regPlate.includes(deviceName)) {
-                    return true;
-                }
-            }
-
-            // Check if device name contains fleet number
-            if (device.name && vehicle.fleetNumber) {
-                const deviceName = device.name.toLowerCase();
-                const fleetNum = vehicle.fleetNumber.toString();
-                if (deviceName.includes(fleetNum)) {
-                    return true;
-                }
-            }
-
-            return false;
-        });
-
-        if (matchedDevice) {
-            vehicle.deviceId = matchedDevice.id;
-            vehicle.deviceName = matchedDevice.name;
-            matchedCount++;
-        }
-    });
-
-    console.log(`Matched ${matchedCount} vehicles to Geotab devices`);
-    return matchedCount;
-}
-
-// Data Update Functions
-async function updateOdometerData() {
-    if (!geotabApi) {
-        showError("Geotab API is not available");
-        return;
-    }
-
-    updateConnectionStatus(true);
-
-    try {
-        // Get devices if we haven't matched them yet
-        const devicesNeeded = fleetData.some(vehicle => !vehicle.deviceId);
-        if (devicesNeeded) {
-            const devices = await getDevices();
-            matchVehiclesToDevices(devices);
-        }
-
-        // Update odometer data for each vehicle
-        const updatePromises = fleetData.map(async (vehicle, index) => {
-            if (!vehicle.deviceId) {
-                console.warn(`No device ID found for vehicle ${vehicle.regPlate}`);
-                return;
-            }
-
-            try {
-                const odometerData = await getOdometerData(vehicle.deviceId);
-                if (odometerData) {
-                    vehicle.currentOdometer = Math.round(odometerData.value);
-                    vehicle.remainingKm = vehicle.rucPaidTo - vehicle.currentOdometer;
-                    vehicle.lastUpdated = odometerData.dateTime;
-
-                    // Update the table row
-                    updateTableRow(index, vehicle);
-                }
-            } catch (error) {
-                console.error(`Failed to update odometer for vehicle ${vehicle.regPlate}:`, error);
-            }
-        });
-
-        await Promise.all(updatePromises);
-
-        // Save updated data
-        saveFleetData();
-
-        // Update UI components
-        updateSummaryCards();
-        updateAlerts();
-        updateLastUpdated();
-
-        console.log("Odometer data update completed");
-    } catch (error) {
-        console.error("Failed to update odometer data:", error);
-        showError("Failed to update vehicle data: " + error.message);
-        updateConnectionStatus(false);
-    }
-}
-
-// UI Update Functions
-function updateSummaryCards() {
-    const totalVehicles = fleetData.length;
-    const alertCount = fleetData.filter(vehicle =>
-        vehicle.remainingKm !== undefined && vehicle.remainingKm <= ALERT_THRESHOLD
-    ).length;
-    const activeLicenses = fleetData.filter(vehicle =>
-        vehicle.remainingKm !== undefined && vehicle.remainingKm > 0
-    ).length;
-
-    document.getElementById("totalVehicles").textContent = totalVehicles;
-    document.getElementById("alertCount").textContent = alertCount;
-    document.getElementById("activeLicenses").textContent = activeLicenses;
-}
-
-function updateAlerts() {
-    const alertsContainer = document.getElementById("alertsContainer");
-    const alertVehicles = fleetData.filter(vehicle =>
-        vehicle.remainingKm !== undefined && vehicle.remainingKm <= ALERT_THRESHOLD
-    );
-
-    if (alertVehicles.length === 0) {
-        alertsContainer.innerHTML = '<p class="no-alerts">No vehicles require immediate attention</p>';
-    } else {
-        alertsContainer.innerHTML = alertVehicles.map(vehicle => {
-            const urgency = vehicle.remainingKm <= 500 ? 'URGENT' : 'WARNING';
-            return `
-                <div class="alert-item">
-                    <strong>${urgency}:</strong> ${vehicle.vehicleDescription} (${vehicle.regPlate})
-                    has only ${formatNumber(Math.max(0, vehicle.remainingKm))} km remaining on RUC license
-                </div>
-            `;
-        }).join('');
-    }
-}
-
-function getStatusBadge(remainingKm) {
-    if (remainingKm === undefined || remainingKm === null) {
-        return '<span class="status-badge">No Data</span>';
-    }
-
-    if (remainingKm <= 500) {
-        return '<span class="status-badge status-critical">Critical</span>';
-    } else if (remainingKm <= ALERT_THRESHOLD) {
-        return '<span class="status-badge status-warning">Warning</span>';
-    } else {
-        return '<span class="status-badge status-ok">OK</span>';
-    }
-}
-
-function updateTableRow(index, vehicle) {
-    const tbody = document.querySelector("#fleetTable tbody");
-    const rows = tbody.querySelectorAll("tr");
-    if (rows[index]) {
-        const row = rows[index];
-        
-        // Update current odometer (column 4)
-        row.cells[4].textContent = vehicle.currentOdometer ? formatNumber(vehicle.currentOdometer) : '--';
-        
-        // Update remaining km (column 5)
-        row.cells[6].textContent = vehicle.remainingKm !== undefined ? formatNumber(Math.max(0, vehicle.remainingKm)) : '--';
-        
-        // Update license options (column 6)
-        const newLicenseWith1000 = vehicle.rucPaidTo + 1000;
-        const newLicenseWith5000 = vehicle.rucPaidTo + 5000;
-        const newLicenseWith10000 = vehicle.rucPaidTo + 10000;
-        
-        row.cells[7].innerHTML = `
-            <div class="license-options">
-                <small>+1000km: ${formatNumber(newLicenseWith1000)}</small><br>
-                <small>+5000km: ${formatNumber(newLicenseWith5000)}</small><br>
-                <small>+10000km: ${formatNumber(newLicenseWith10000)}</small>
-            </div>
-        `;
-        
-        // Update status badge (column 7)
-        row.cells[8].innerHTML = getStatusBadge(vehicle.remainingKm);
-    }
-}
-
-function populateFleetTable() {
-    const tbody = document.querySelector("#fleetTable tbody");
-    tbody.innerHTML = '';
-
-    fleetData.forEach((vehicle, index) => {
-        const row = tbody.insertRow();
-        
-        // Vehicle Description
-        row.insertCell(0).textContent = vehicle.vehicleDescription;
-        
-        // Fleet Number
-        row.insertCell(1).textContent = vehicle.fleetNumber;
-        
-        // Registration
-        row.insertCell(2).textContent = vehicle.regPlate;
-        
-        // License Valid To
-        row.insertCell(3).textContent = formatNumber(vehicle.rucPaidTo);
-        
-        // Current Odometer
-        row.insertCell(4).textContent = vehicle.currentOdometer ? formatNumber(vehicle.currentOdometer) : '--';
-        
-        // Get Reading button
-        const getReadingCell = row.insertCell(5);
-        getReadingCell.innerHTML = `<button class="btn-get-reading" onclick="getOdometerReading(${index})">Get Reading</button>`;
-        
-        // Remaining km
-        row.insertCell(6).textContent = vehicle.remainingKm !== undefined ? formatNumber(Math.max(0, vehicle.remainingKm)) : '--';
-        
-        // New License Options
-        const newLicenseWith1000 = vehicle.rucPaidTo + 1000;
-        const newLicenseWith5000 = vehicle.rucPaidTo + 5000;
-        const newLicenseWith10000 = vehicle.rucPaidTo + 10000;
-        
-        row.insertCell(7).innerHTML = `
-            <div class="license-options">
-                <small>+1000km: ${formatNumber(newLicenseWith1000)}</small><br>
-                <small>+5000km: ${formatNumber(newLicenseWith5000)}</small><br>
-                <small>+10000km: ${formatNumber(newLicenseWith10000)}</small>
-            </div>
-        `;
-        
-        // Status
-        row.insertCell(8).innerHTML = getStatusBadge(vehicle.remainingKm);
-        
-        // Actions
-        row.insertCell(9).innerHTML = `
-            <button class="btn-renew" onclick="openRenewalModal(${index})">Renew</button>
-        `;
-    });
-}
-
-// Event Handlers
-async function getOdometerReading(vehicleIndex) {
-    const vehicle = fleetData[vehicleIndex];
-    
-    try {
-        showLoading();
-        
-        if (!vehicle.deviceId) {
-            // Try to find device first
-            const devices = await getDevices();
-            matchVehiclesToDevices(devices);
-        }
-        
-        if (!vehicle.deviceId) {
-            showError(`No Geotab device found for vehicle ${vehicle.regPlate}`);
-            return;
-        }
-        
-        const odometerData = await getOdometerData(vehicle.deviceId);
-        if (odometerData) {
-            vehicle.currentOdometer = Math.round(odometerData.value);
-            vehicle.remainingKm = vehicle.rucPaidTo - vehicle.currentOdometer;
-            vehicle.lastUpdated = odometerData.dateTime;
             
-            updateTableRow(vehicleIndex, vehicle);
-            saveFleetData();
-            updateSummaryCards();
-            updateAlerts();
-        } else {
-            showError(`No recent odometer data found for vehicle ${vehicle.regPlate}`);
-        }
-    } catch (error) {
-        console.error("Failed to get odometer reading:", error);
-        showError("Failed to get odometer reading: " + error.message);
-    } finally {
-        hideLoading();
-    }
-}
-
-function openRenewalModal(vehicleIndex) {
-    selectedVehicleIndex = vehicleIndex;
-    const vehicle = fleetData[vehicleIndex];
-    
-    document.getElementById("modalVehicleName").textContent = vehicle.vehicleDescription;
-    document.getElementById("modalCurrentLimit").textContent = formatNumber(vehicle.rucPaidTo);
-    document.getElementById("modalCurrentOdometer").textContent = vehicle.currentOdometer ? formatNumber(vehicle.currentOdometer) : '--';
-    
-    document.getElementById("renewalModal").classList.remove("hidden");
-}
-
-// Modal event handlers
-document.addEventListener("DOMContentLoaded", function() {
-    // Close modal
-    document.getElementById("closeModal").addEventListener("click", function() {
-        document.getElementById("renewalModal").classList.add("hidden");
-    });
-    
-    document.getElementById("cancelRenewal").addEventListener("click", function() {
-        document.getElementById("renewalModal").classList.add("hidden");
-    });
-    
-    // Option card selection
-    document.querySelectorAll(".option-card").forEach(card => {
-        card.addEventListener("click", function() {
-            // Remove selection from other cards
-            document.querySelectorAll(".option-card").forEach(c => c.classList.remove("selected"));
+            updateProgress(90, "Building vehicle table...");
+            logDebug("Fleet data processing completed", fleetData.length + " vehicles ready");
             
-            // Select this card
-            this.classList.add("selected");
+            displayFleetData();
             
-            // Show renewal summary
-            const value = parseInt(this.dataset.value);
-            const vehicle = fleetData[selectedVehicleIndex];
-            const newLimit = vehicle.rucPaidTo + value;
-            
-            document.getElementById("newLicenseLimit").textContent = formatNumber(newLimit);
-            document.querySelector(".renewal-summary").classList.remove("hidden");
-            document.getElementById("confirmRenewal").disabled = false;
-        });
-    });
-    
-    // Confirm renewal
-    document.getElementById("confirmRenewal").addEventListener("click", function() {
-        const selectedOption = document.querySelector(".option-card.selected");
-        if (selectedOption && selectedVehicleIndex !== null) {
-            const value = parseInt(selectedOption.dataset.value);
-            const vehicle = fleetData[selectedVehicleIndex];
-            
-            // Update vehicle data
-            vehicle.rucPaidTo += value;
-            vehicle.remainingKm = vehicle.rucPaidTo - (vehicle.currentOdometer || 0);
-            
-            // Update UI
-            updateTableRow(selectedVehicleIndex, vehicle);
-            saveFleetData();
-            updateSummaryCards();
-            updateAlerts();
-            
-            // Close modal
-            document.getElementById("renewalModal").classList.add("hidden");
-            
-            // Reset modal state
-            document.querySelectorAll(".option-card").forEach(c => c.classList.remove("selected"));
-            document.querySelector(".renewal-summary").classList.add("hidden");
-            document.getElementById("confirmRenewal").disabled = true;
-        }
-    });
-    
-    // Refresh button
-    document.getElementById("refreshBtn").addEventListener("click", function() {
-        updateOdometerData();
-    });
-    
-    // Dismiss error
-    document.getElementById("dismissError").addEventListener("click", function() {
-        hideError();
-    });
-});
-
-// Initialize the add-in
-function initialize(api, state, callback) {
-    geotabApi = api;
-    currentUser = state.user;
-    
-    console.log("RUC License Management Add-In initialized");
-    console.log("User:", currentUser.name);
-    
-    showLoading();
-    
-    // Load fleet data and populate table
-    loadFleetData()
-        .then(() => {
-            populateFleetTable();
-            updateSummaryCards();
-            updateAlerts();
-            updateLastUpdated();
-            hideLoading();
-            
-            // Set up auto-refresh
-            refreshInterval = setInterval(updateOdometerData, REFRESH_INTERVAL);
-            
-            console.log("Add-in ready with", fleetData.length, "vehicles");
         })
         .catch(error => {
-            console.error("Failed to initialize add-in:", error);
-            showError("Failed to load fleet data: " + error.message);
-            hideLoading();
+            logDebug("ERROR in loadFleetData", error.message);
+            logDebug("Error stack", error.stack);
+            
+            updateProgress(0, "Error occurred");
+            showError("Data loading failed: " + error.message);
         });
+}
+
+function displayFleetData() {
+    logDebug("=== STARTING DISPLAY PROCESS ===");
+    updateProgress(95, "Displaying vehicle data...");
     
-    if (callback) {
-        callback();
+    const container = document.getElementById('data-container');
+    if (!container) {
+        logDebug("ERROR: data-container element not found");
+        return;
+    }
+    
+    logDebug("Building HTML for", fleetData.length, "vehicles");
+    
+    let html = `
+        <div style="background: #d4edda; padding: 15px; border-radius: 5px; margin: 10px 0; color: #155724;">
+            <h3>✅ SUCCESS: Fleet Data Loaded</h3>
+            <p><strong>Total Vehicles:</strong> ${fleetData.length}</p>
+            <p><strong>Data Source:</strong> GitHub Pages RUC_Data.json</p>
+            <p><strong>Status:</strong> Ready for odometer integration</p>
+        </div>
+        
+        <table style="width: 100%; border-collapse: collapse; margin: 20px 0; background: white;">
+            <thead>
+                <tr style="background: #343a40; color: white;">
+                    <th style="padding: 12px; border: 1px solid #ddd; text-align: left;">Vehicle Description</th>
+                    <th style="padding: 12px; border: 1px solid #ddd; text-align: left;">Fleet #</th>
+                    <th style="padding: 12px; border: 1px solid #ddd; text-align: left;">Reg Plate</th>
+                    <th style="padding: 12px; border: 1px solid #ddd; text-align: right;">RUC Paid To (km)</th>
+                    <th style="padding: 12px; border: 1px solid #ddd; text-align: center;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+    
+    fleetData.forEach((vehicle, index) => {
+        const bgColor = index % 2 === 0 ? '#ffffff' : '#f8f9fa';
+        html += `
+            <tr style="background: ${bgColor};">
+                <td style="padding: 10px; border: 1px solid #ddd;">${vehicle.vehicleDescription || 'N/A'}</td>
+                <td style="padding: 10px; border: 1px solid #ddd;">${vehicle.fleetNumber || 'N/A'}</td>
+                <td style="padding: 10px; border: 1px solid #ddd;">${vehicle.regPlate || 'N/A'}</td>
+                <td style="padding: 10px; border: 1px solid #ddd; text-align: right;">${formatNumber(vehicle.rucPaidTo)}</td>
+                <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">
+                    <button onclick="testOdometerRead(${index})" style="background: #007bff; color: white; border: none; padding: 6px 12px; border-radius: 3px; cursor: pointer; margin: 2px;">
+                        Get Reading
+                    </button>
+                    <button onclick="testRenew(${index})" style="background: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 3px; cursor: pointer; margin: 2px;">
+                        Renew
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+    
+    html += `
+            </tbody>
+        </table>
+        
+        <div style="background: #e7f3ff; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <h4>🎯 Next Steps:</h4>
+            <ul>
+                <li>✅ All ${fleetData.length} vehicles loaded successfully</li>
+                <li>🔄 Click "Get Reading" to test Geotab device integration</li>
+                <li>🔄 Click "Renew" to test license renewal functionality</li>
+                <li>📊 Monitor console for detailed API interaction logs</li>
+            </ul>
+        </div>
+    `;
+    
+    container.innerHTML = html;
+    updateProgress(100, "Fleet data displayed successfully!");
+    
+    logDebug("Display process completed successfully");
+    logDebug("=== ALL PROCESSES COMPLETED ===");
+}
+
+function testOdometerRead(vehicleIndex) {
+    const vehicle = fleetData[vehicleIndex];
+    logDebug("=== TESTING ODOMETER READ ===");
+    logDebug("Vehicle selected", vehicle.vehicleDescription);
+    logDebug("Fleet number", vehicle.fleetNumber);
+    logDebug("Registration", vehicle.regPlate);
+    
+    if (!geotabApi) {
+        logDebug("ERROR: Geotab API not available");
+        alert("Geotab API not available for odometer reading");
+        return;
+    }
+    
+    logDebug("Geotab API available, testing connection...");
+    alert(`Testing odometer read for:\n\nVehicle: ${vehicle.vehicleDescription}\nFleet #: ${vehicle.fleetNumber}\nReg: ${vehicle.regPlate}\n\nCheck console for API connection details.`);
+    
+    // Test Geotab API call
+    try {
+        geotabApi.call("Get", {
+            typeName: "Device",
+            search: { name: vehicle.regPlate }
+        }).then(devices => {
+            logDebug("Device search successful", devices.length + " devices found");
+            if (devices.length > 0) {
+                logDebug("Matching device found", devices[0]);
+            }
+        }).catch(error => {
+            logDebug("Device search failed", error.message);
+        });
+    } catch (error) {
+        logDebug("Geotab API call failed", error.message);
     }
 }
 
-// Focus and blur handlers for Geotab add-in lifecycle
+function testRenew(vehicleIndex) {
+    const vehicle = fleetData[vehicleIndex];
+    logDebug("=== TESTING RENEWAL PROCESS ===");
+    logDebug("Vehicle selected for renewal", vehicle.vehicleDescription);
+    
+    alert(`Testing renewal for:\n\nVehicle: ${vehicle.vehicleDescription}\nCurrent RUC: ${formatNumber(vehicle.rucPaidTo)} km\n\nRenewal options:\n+1000km: ${formatNumber(vehicle.rucPaidTo + 1000)}\n+5000km: ${formatNumber(vehicle.rucPaidTo + 5000)}\n+10000km: ${formatNumber(vehicle.rucPaidTo + 10000)}`);
+}
+
+function showError(message) {
+    logDebug("Showing error to user", message);
+    
+    const errorContainer = document.getElementById('error-container');
+    const errorMessage = document.getElementById('error-message');
+    
+    if (errorContainer && errorMessage) {
+        errorMessage.textContent = message;
+        errorContainer.style.display = 'block';
+    }
+}
+
+function copyDebugLog() {
+    const logText = debugLog.join('\n');
+    navigator.clipboard.writeText(logText).then(() => {
+        alert('Debug log copied to clipboard!\n\nPaste this in your message to show exactly what happened.');
+    }).catch(err => {
+        console.error('Copy failed:', err);
+        alert('Copy failed. Please manually select the debug output.');
+    });
+}
+
+function formatNumber(num) {
+    return new Intl.NumberFormat().format(Math.round(num));
+}
+
+// Geotab add-in lifecycle functions
 function focus() {
-    console.log("Add-in gained focus");
-    updateLastUpdated();
+    logDebug("Add-in gained focus");
 }
 
 function blur() {
-    console.log("Add-in lost focus");
+    logDebug("Add-in lost focus");
 }
 
-// Clean up when add-in is unloaded
-window.addEventListener("beforeunload", function() {
-    if (refreshInterval) {
-        clearInterval(refreshInterval);
-    }
+// Global error handler
+window.addEventListener('error', function(event) {
+    logDebug("GLOBAL ERROR CAUGHT", {
+        message: event.message,
+        filename: event.filename,
+        lineno: event.lineno,
+        colno: event.colno
+    });
 });
+
+logDebug("=== DEBUG MAIN.JS LOADED SUCCESSFULLY ===");
