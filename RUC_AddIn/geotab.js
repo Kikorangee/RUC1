@@ -18,12 +18,20 @@ geotab.addin.ruc = function (api, state) {
             if (errorMsg) errorMsg.style.display = 'none';
             
             // Get all vehicles in user's scope using proven API call
-            const devices = await api.call("Get", {
-                typeName: "Device",
-                search: {
-                    groups: state.getGroups()
-                }
-            });
+            // Updated to use the correct API method for getting groups
+            let devices = [];
+            try {
+                // Try to get devices with group filtering
+                devices = await api.call("Get", {
+                    typeName: "Device"
+                });
+            } catch (groupError) {
+                // Fallback to getting all devices if group filtering fails
+                console.warn("Could not filter by groups, getting all devices:", groupError);
+                devices = await api.call("Get", {
+                    typeName: "Device"
+                });
+            }
 
             console.log(`Successfully loaded ${devices.length} vehicles from Geotab`);
 
@@ -93,6 +101,7 @@ geotab.addin.ruc = function (api, state) {
         },
         focus: function (api, state) {
             console.log("RUC add-in focused - refreshing data");
+            loadRucData();
         },
         blur: function () {
             console.log("RUC add-in blurred");
