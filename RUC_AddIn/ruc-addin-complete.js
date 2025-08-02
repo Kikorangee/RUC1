@@ -157,7 +157,13 @@ geotab.addin.ruc = function(api, state) {
         // Log all Geotab device names for debugging
         console.log("Available Geotab devices:");
         devices.forEach((device, index) => {
-            console.log(`  ${index + 1}. Name: "${device.name}", License: "${device.licensePlate || 'N/A'}", Serial: "${device.serialNumber || 'N/A'}"`);
+            console.log(`  ${index + 1}. Name: "${device.name}", License: "${device.licensePlate || 'N/A'}", Serial: "${device.serialNumber || 'N/A'}", ID: "${device.id}"`);
+        });
+        
+        // Log first 10 RUC vehicles for comparison
+        console.log("First 10 RUC vehicles for comparison:");
+        rucData.slice(0, 10).forEach((vehicle, index) => {
+            console.log(`  ${index + 1}. Fleet #${vehicle.fleetNumber}: ${vehicle.regPlate} (${vehicle.vehicleDescription})`);
         });
         
         for (const rucVehicle of rucData) {
