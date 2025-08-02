@@ -133,34 +133,79 @@ geotab.addin.ruc = function(api, state) {
         
         console.log(`Attempting to match ${rucData.length} RUC vehicles with ${devices.length} Geotab devices`);
         
+        // Log all Geotab device names for debugging
+        console.log("Available Geotab devices:");
+        devices.forEach((device, index) => {
+            console.log(`  ${index + 1}. Name: "${device.name}", License: "${device.licensePlate || 'N/A'}", Serial: "${device.serialNumber || 'N/A'}"`);
+        });
+        
         for (const rucVehicle of rucData) {
-            // Try to find matching Geotab device by fleet number
-            const matchedDevice = devices.find(device => {
-                // Check if device name contains the fleet number
-                if (device.name && device.name.includes(rucVehicle.fleetNumber.toString())) {
-                    return true;
-                }
-                
-                // Check if device has a custom property with fleet number
-                if (device.groups && device.groups.some(group => 
-                    group.name && group.name.includes(rucVehicle.fleetNumber.toString())
-                )) {
-                    return true;
-                }
-                
-                // Check serial number or other identifiers
-                if (device.serialNumber && device.serialNumber.includes(rucVehicle.fleetNumber.toString())) {
-                    return true;
-                }
-                
-                return false;
-            });
+            let matchedDevice = null;
+            
+            // Strategy 1: Exact fleet number match in device name
+            matchedDevice = devices.find(device => 
+                device.name && device.name.includes(rucVehicle.fleetNumber.toString())
+            );
+            
+            // Strategy 2: License plate match (fallback)
+            if (!matchedDevice) {
+                matchedDevice = devices.find(device => 
+                    device.licensePlate && 
+                    device.licensePlate.toLowerCase() === rucVehicle.regPlate.toLowerCase()
+                );
+            }
+            
+            // Strategy 3: Partial license plate match (remove spaces/hyphens)
+            if (!matchedDevice) {
+                const cleanRucPlate = rucVehicle.regPlate.replace(/[-\s]/g, '').toLowerCase();
+                matchedDevice = devices.find(device => 
+                    device.licensePlate && 
+                    device.licensePlate.replace(/[-\s]/g, '').toLowerCase() === cleanRucPlate
+                );
+            }
+            
+            // Strategy 4: Check if device name contains the registration plate
+            if (!matchedDevice) {
+                matchedDevice = devices.find(device => 
+                    device.name && 
+                    device.name.toLowerCase().includes(rucVehicle.regPlate.toLowerCase())
+                );
+            }
+            
+            // Strategy 5: Check groups for fleet number or registration
+            if (!matchedDevice) {
+                matchedDevice = devices.find(device => 
+                    device.groups && device.groups.some(group => 
+                        group.name && (
+                            group.name.includes(rucVehicle.fleetNumber.toString()) ||
+                            group.name.toLowerCase().includes(rucVehicle.regPlate.toLowerCase())
+                        )
+                    )
+                );
+            }
+            
+            // Strategy 6: Serial number contains fleet number
+            if (!matchedDevice) {
+                matchedDevice = devices.find(device => 
+                    device.serialNumber && 
+                    device.serialNumber.includes(rucVehicle.fleetNumber.toString())
+                );
+            }
             
             // Log matching attempts for debugging
             if (matchedDevice) {
-                console.log(`✓ Matched Fleet #${rucVehicle.fleetNumber} (${rucVehicle.regPlate}) with Geotab device: ${matchedDevice.name}`);
+                console.log(`✓ Matched Fleet #${rucVehicle.fleetNumber} (${rucVehicle.regPlate}) with Geotab device: "${matchedDevice.name}" (License: ${matchedDevice.licensePlate || 'N/A'})`);
             } else {
                 console.warn(`✗ No Geotab device found for Fleet #${rucVehicle.fleetNumber} (${rucVehicle.regPlate})`);
+                
+                // For debugging: show potential matches
+                const potentialMatches = devices.filter(device => 
+                    (device.name && device.name.toLowerCase().includes(rucVehicle.fleetNumber.toString().slice(-2))) ||
+                    (device.licensePlate && device.licensePlate.toLowerCase().includes(rucVehicle.regPlate.slice(-3).toLowerCase()))
+                );
+                if (potentialMatches.length > 0) {
+                    console.log(`  Potential matches for ${rucVehicle.regPlate}:`, potentialMatches.map(d => `"${d.name}" (${d.licensePlate || 'N/A'})`));
+                }
             }
 
             matched.push({
@@ -172,6 +217,14 @@ geotab.addin.ruc = function(api, state) {
 
         const matchedCount = matched.filter(v => v.hasGeotabData).length;
         console.log(`Successfully matched ${matchedCount} out of ${rucData.length} vehicles with Geotab devices`);
+        
+        // If very few matches, log some examples for debugging
+        if (matchedCount < rucData.length * 0.5) {
+            console.warn("Low match rate detected. Sample RUC vehicles:");
+            rucData.slice(0, 5).forEach(vehicle => {
+                console.log(`  Fleet #${vehicle.fleetNumber}: ${vehicle.regPlate} (${vehicle.vehicleDescription})`);
+            });
+        }
         
         return matched;
     };
