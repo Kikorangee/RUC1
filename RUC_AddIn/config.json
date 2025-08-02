@@ -1,1 +1,14 @@
- 
+{
+    "name": "RUC License Management",
+    "supportEmail": "support@unitedcivil.co.nz",
+    "version": "1.0.3",
+    "items": [{
+        "url": "index.html",
+        "path": "ActivityLink",
+        "menuName": {
+            "en": "RUC License Management"
+        },
+        "icon": "ruc-icon.svg"
+    }],
+    "isSigned": false
+}
