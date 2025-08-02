@@ -24,38 +24,39 @@
                 <h3 style="margin: 0; color: #495057;">Status: <span id="status" style="color: #007bff;">Ready</span></h3>
             </div>
             
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px;">
-                <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center;">
-                    <h4 style="margin: 0 0 10px 0; color: #6c757d;">Total Vehicles</h4>
-                    <div id="total" style="font-size: 24px; font-weight: bold; color: #28a745;">--</div>
+            <div class="summary-cards">
+                <div class="card">
+                    <h3>Total Vehicles</h3>
+                    <div id="total" class="card-number">--</div>
                 </div>
-                <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center;">
-                    <h4 style="margin: 0 0 10px 0; color: #6c757d;">Active Licenses</h4>
-                    <div id="active" style="font-size: 24px; font-weight: bold; color: #007bff;">--</div>
+                <div class="card">
+                    <h3>Active Licenses</h3>
+                    <div id="active" class="card-number">--</div>
                 </div>
-                <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center;">
-                    <h4 style="margin: 0 0 10px 0; color: #6c757d;">Alerts</h4>
-                    <div style="font-size: 24px; font-weight: bold; color: #ffc107;">0</div>
+                <div class="card alert-card">
+                    <h3>Alerts</h3>
+                    <div class="card-number">--</div>
                 </div>
             </div>
             
-            <div style="background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden;">
-                <div style="padding: 20px; border-bottom: 1px solid #dee2e6;">
-                    <h3 style="margin: 0; color: #495057;">Vehicle Fleet</h3>
+            <div class="fleet-section">
+                <div class="section-header">
+                    <h2>Vehicle Fleet</h2>
+                    <button class="btn-refresh" onclick="refreshRucData()">Refresh Data</button>
                 </div>
-                <div style="overflow-x: auto;">
-                    <table style="width: 100%; border-collapse: collapse;">
-                        <thead style="background: #f8f9fa;">
+                <div class="table-container">
+                    <table class="fleet-table">
+                        <thead>
                             <tr>
-                                <th style="padding: 15px; text-align: left; border-bottom: 2px solid #dee2e6;">Vehicle</th>
-                                <th style="padding: 15px; text-align: left; border-bottom: 2px solid #dee2e6;">Fleet #</th>
-                                <th style="padding: 15px; text-align: left; border-bottom: 2px solid #dee2e6;">Registration</th>
-                                <th style="padding: 15px; text-align: right; border-bottom: 2px solid #dee2e6;">RUC Paid To</th>
-                                <th style="padding: 15px; text-align: center; border-bottom: 2px solid #dee2e6;">Actions</th>
+                                <th>Vehicle</th>
+                                <th>Fleet #</th>
+                                <th>Registration</th>
+                                <th style="text-align: right;">RUC Paid To</th>
+                                <th style="text-align: center;">Status</th>
                             </tr>
                         </thead>
                         <tbody id="ruc-table-body">
-                            <tr><td colspan="5" style="padding: 40px; text-align: center; color: #6c757d;">Loading vehicles...</td></tr>
+                            <tr><td colspan="5" class="text-center">Loading vehicles...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -66,6 +67,6 @@
     </div>
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-    <script src="test-addin.js"></script>
+    <script src="ruc-addin-complete.js"></script>
 </body>
 </html>

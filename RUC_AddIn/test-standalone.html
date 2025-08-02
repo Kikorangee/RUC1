@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>RUC License Management - Standalone Test</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Loading spinner -->
+    <div id="loading" style="display: none; text-align: center; padding: 50px;">
+        <div style="font-size: 24px; color: #007bff;">Loading vehicle data...</div>
+        <div style="margin-top: 20px;">
+            <div style="border: 4px solid #f3f3f3; border-top: 4px solid #007bff; border-radius: 50%; width: 40px; height: 40px; animation: spin 2s linear infinite; margin: 0 auto;"></div>
+        </div>
+    </div>
+    
+    <!-- Main content -->
+    <div id="rucAddin" style="padding: 20px; font-family: Arial, sans-serif; background: #f8f9fa; min-height: 100vh; display: none;">
+        <div style="max-width: 1200px; margin: 0 auto;">
+            <h1 style="color: #28a745; text-align: center; margin-bottom: 30px;">RUC License Management - Test Mode</h1>
+            
+            <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px;">
+                <h3 style="margin: 0; color: #495057;">Status: <span id="status" style="color: #007bff;">Ready</span></h3>
+            </div>
+            
+            <div class="summary-cards">
+                <div class="card">
+                    <h3>Total Vehicles</h3>
+                    <div id="total" class="card-number">--</div>
+                </div>
+                <div class="card">
+                    <h3>Active Licenses</h3>
+                    <div id="active" class="card-number">--</div>
+                </div>
+                <div class="card alert-card">
+                    <h3>Alerts</h3>
+                    <div class="card-number">--</div>
+                </div>
+            </div>
+            
+            <div class="fleet-section">
+                <div class="section-header">
+                    <h2>Vehicle Fleet</h2>
+                    <button class="btn-refresh" onclick="refreshRucData()">Refresh Data</button>
+                </div>
+                <div class="table-container">
+                    <table class="fleet-table">
+                        <thead>
+                            <tr>
+                                <th>Vehicle</th>
+                                <th>Fleet #</th>
+                                <th>Registration</th>
+                                <th style="text-align: right;">RUC Paid To</th>
+                                <th style="text-align: center;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ruc-table-body">
+                            <tr><td colspan="5" class="text-center">Loading vehicles...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div id="error-message" style="display: none; background: #f8d7da; color: #721c24; padding: 15px; border-radius: 5px; margin-top: 20px;"></div>
+        </div>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    
+    <!-- Mock Geotab API for testing -->
+    <script>
+        // Mock Geotab API for standalone testing
+        window.geotab = {
+            addin: {}
+        };
+
+        // Mock API object
+        const mockApi = {
+            call: async function(method, params) {
+                console.log(`Mock API call: ${method}`, params);
+                
+                if (method === "Get" && params.typeName === "Device") {
+                    // Return mock devices that match some of our RUC data
+                    return [
+                        { id: "device1", name: "Transport Trailers 4A 2002", licensePlate: "589AT", serialNumber: "TT001" },
+                        { id: "device2", name: "Toyota Hiace 2009", licensePlate: "FDT602", serialNumber: "TH445" },
+                        { id: "device3", name: "Ford Ranger 2018", licensePlate: "LER932", serialNumber: "FR486" },
+                        { id: "device4", name: "Tesla Model Y 2023", licensePlate: "QFC57", serialNumber: "TM534" },
+                        { id: "device5", name: "Toyota Hilux 2024", licensePlate: "QJZ870", serialNumber: "TH537" }
+                    ];
+                }
+                
+                if (method === "Get" && params.typeName === "StatusData") {
+                    // Return mock odometer data
+                    const deviceId = params.search.deviceSearch.id;
+                    const baseOdometer = {
+                        "device1": 12500000, // 12,500 km in meters
+                        "device2": 340000000, // 340,000 km in meters  
+                        "device3": 275000000, // 275,000 km in meters
+                        "device4": 35000000,  // 35,000 km in meters
+                        "device5": 48000000   // 48,000 km in meters
+                    };
+                    
+                    return [{
+                        data: baseOdometer[deviceId] || 100000000,
+                        dateTime: new Date().toISOString()
+                    }];
+                }
+                
+                return [];
+            }
+        };
+
+        // Mock state object
+        const mockState = {};
+    </script>
+    
+    <!-- Load the RUC add-in with mock API -->
+    <script src="ruc-addin-complete.js"></script>
+    
+    <script>
+        // Initialize the add-in with mock API
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("Initializing RUC add-in in test mode...");
+            
+            if (typeof geotab !== 'undefined' && geotab.addin && geotab.addin.ruc) {
+                const rucAddin = geotab.addin.ruc(mockApi, mockState);
+                
+                // Initialize the add-in
+                rucAddin.initialize(mockApi, mockState, function() {
+                    console.log("RUC add-in initialized successfully in test mode");
+                });
+                
+                // Store reference for testing
+                window.rucAddinInstance = rucAddin;
+            } else {
+                console.error("RUC add-in not found");
+            }
+        });
+    </script>
+</body>
+</html>
