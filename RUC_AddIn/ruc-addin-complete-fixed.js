@@ -383,110 +383,155 @@ geotab.addin.ruc = function(api, state) {
         }
     };
 
-    // Match Geotab devices with RUC data
+    // Calculate similarity score between two strings (0-1)
+    const calculateStringSimilarity = (a, b) => {
+        if (!a || !b) return 0;
+        a = a.toLowerCase().replace(/[^a-z0-9]/g, '');
+        b = b.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (a === b) return 1;
+        
+        // Simple similarity calculation
+        const longer = a.length > b.length ? a : b;
+        const shorter = a.length > b.length ? b : a;
+        if (longer.includes(shorter)) return 0.9;
+        
+        // Check for partial matches
+        const minLength = Math.min(a.length, b.length);
+        let matches = 0;
+        for (let i = 0; i < minLength; i++) {
+            if (a[i] === b[i]) matches++;
+        }
+        return matches / longer.length;
+    };
+
+    // Match Geotab devices with RUC data using fuzzy matching
     const matchDevicesWithRucData = (devices, rucData) => {
         const matched = [];
+        const matchStrategies = [];
         
-        console.log(`Attempting to match ${rucData.length} RUC vehicles with ${devices.length} Geotab devices`);
+        // Scoring weights for different match types
+        const MATCH_WEIGHTS = {
+            exactPlate: 1.0,
+            partialPlate: 0.8,
+            fleetInName: 0.7,
+            fleetInSerial: 0.6,
+            plateInName: 0.5
+        };
+
         
-        // Log all Geotab device names for debugging
-        console.log("Available Geotab devices:");
-        devices.forEach((device, index) => {
-            console.log(`  ${index + 1}. Name: "${device.name}", License: "${device.licensePlate || 'N/A'}", Serial: "${device.serialNumber || 'N/A'}", ID: "${device.id}"`);
-        });
+        console.log(`Matching ${rucData.length} RUC vehicles with ${devices.length} Geotab devices`);
         
-        // Log first 10 RUC vehicles for comparison
-        console.log("First 10 RUC vehicles for comparison:");
-        rucData.slice(0, 10).forEach((vehicle, index) => {
-            console.log(`  ${index + 1}. Fleet #${vehicle.fleetNumber}: ${vehicle.regPlate} (${vehicle.vehicleDescription})`);
-        });
+        // Pre-process device data for faster matching
+        const deviceMap = devices.reduce((map, device) => {
+            const cleanPlate = device.licensePlate ? 
+                device.licensePlate.replace(/[^a-z0-9]/gi, '').toLowerCase() : '';
+            const cleanSerial = device.serialNumber ?
+                device.serialNumber.replace(/[^a-z0-9]/gi, '').toLowerCase() : '';
+                
+            map[device.id] = {
+                ...device,
+                cleanPlate,
+                cleanSerial,
+                cleanName: device.name.toLowerCase()
+            };
+            return map;
+        }, {});
+
         
         for (const rucVehicle of rucData) {
-            let matchedDevice = null;
+            const cleanRucPlate = rucVehicle.regPlate.replace(/[^a-z0-9]/gi, '').toLowerCase();
+            const fleetNumStr = rucVehicle.fleetNumber.toString();
+            let bestMatch = null;
+            let bestScore = 0;
+            let bestStrategy = 'none';
             
-            // Strategy 1: Exact fleet number match in device name
-            matchedDevice = devices.find(device => 
-                device.name && device.name.includes(rucVehicle.fleetNumber.toString())
-            );
-            
-            // Strategy 2: License plate match (fallback)
-            if (!matchedDevice) {
-                matchedDevice = devices.find(device => 
-                    device.licensePlate && 
-                    device.licensePlate.toLowerCase() === rucVehicle.regPlate.toLowerCase()
-                );
-            }
-            
-            // Strategy 3: Partial license plate match (remove spaces/hyphens)
-            if (!matchedDevice) {
-                const cleanRucPlate = rucVehicle.regPlate.replace(/[-\s]/g, '').toLowerCase();
-                matchedDevice = devices.find(device => 
-                    device.licensePlate && 
-                    device.licensePlate.replace(/[-\s]/g, '').toLowerCase() === cleanRucPlate
-                );
-            }
-            
-            // Strategy 4: Check if device name contains the registration plate
-            if (!matchedDevice) {
-                matchedDevice = devices.find(device => 
-                    device.name && 
-                    device.name.toLowerCase().includes(rucVehicle.regPlate.toLowerCase())
-                );
-            }
-            
-            // Strategy 5: Check groups for fleet number or registration
-            if (!matchedDevice) {
-                matchedDevice = devices.find(device => 
-                    device.groups && device.groups.some(group => 
-                        group.name && (
-                            group.name.includes(rucVehicle.fleetNumber.toString()) ||
-                            group.name.toLowerCase().includes(rucVehicle.regPlate.toLowerCase())
-                        )
-                    )
-                );
-            }
-            
-            // Strategy 6: Serial number contains fleet number
-            if (!matchedDevice) {
-                matchedDevice = devices.find(device => 
-                    device.serialNumber && 
-                    device.serialNumber.includes(rucVehicle.fleetNumber.toString())
-                );
-            }
-            
-            // Log matching attempts for debugging
-            if (matchedDevice) {
-                console.log(`✓ Matched Fleet #${rucVehicle.fleetNumber} (${rucVehicle.regPlate}) with Geotab device: "${matchedDevice.name}" (License: ${matchedDevice.licensePlate || 'N/A'})`);
-            } else {
-                console.warn(`✗ No Geotab device found for Fleet #${rucVehicle.fleetNumber} (${rucVehicle.regPlate})`);
+            // Evaluate all devices for best match
+            Object.values(deviceMap).forEach(device => {
+                let score = 0;
+                let strategy = 'none';
                 
-                // For debugging: show potential matches
-                const potentialMatches = devices.filter(device => 
-                    (device.name && device.name.toLowerCase().includes(rucVehicle.fleetNumber.toString().slice(-2))) ||
-                    (device.licensePlate && device.licensePlate.toLowerCase().includes(rucVehicle.regPlate.slice(-3).toLowerCase()))
-                );
-                if (potentialMatches.length > 0) {
-                    console.log(`  Potential matches for ${rucVehicle.regPlate}:`, potentialMatches.map(d => `"${d.name}" (${d.licensePlate || 'N/A'})`));
+                // Plate matches
+                const plateScore = calculateStringSimilarity(device.licensePlate, rucVehicle.regPlate);
+                if (plateScore === 1) {
+                    score = MATCH_WEIGHTS.exactPlate;
+                    strategy = 'exact_plate';
+                } else if (plateScore >= 0.8) {
+                    score = MATCH_WEIGHTS.partialPlate * plateScore;
+                    strategy = 'partial_plate';
                 }
+                
+                // Fleet number matches
+                const nameScore = calculateStringSimilarity(device.name, fleetNumStr);
+                if (nameScore > 0 && nameScore * MATCH_WEIGHTS.fleetInName > score) {
+                    score = nameScore * MATCH_WEIGHTS.fleetInName;
+                    strategy = 'fleet_in_name';
+                }
+                
+                // Serial number matches
+                const serialScore = calculateStringSimilarity(device.serialNumber, fleetNumStr);
+                if (serialScore > 0 && serialScore * MATCH_WEIGHTS.fleetInSerial > score) {
+                    score = serialScore * MATCH_WEIGHTS.fleetInSerial;
+                    strategy = 'fleet_in_serial';
+                }
+                
+                // Plate in name
+                const plateInNameScore = calculateStringSimilarity(device.name, rucVehicle.regPlate);
+                if (plateInNameScore > 0 && plateInNameScore * MATCH_WEIGHTS.plateInName > score) {
+                    score = plateInNameScore * MATCH_WEIGHTS.plateInName;
+                    strategy = 'plate_in_name';
+                }
+                
+                // Update best match if this device scored higher
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestMatch = device;
+                    bestStrategy = strategy;
+                }
+            });
+            
+            // Only consider matches with score above threshold
+            const matchedDevice = bestScore >= 0.6 ? bestMatch : null;
+            const matchStrategy = matchedDevice ? bestStrategy : 'none';
+
+
+            
+            // Log matching results with score and strategy
+            if (matchedDevice) {
+                console.log(`✓ Matched Fleet #${rucVehicle.fleetNumber} (${rucVehicle.regPlate}) with "${matchedDevice.name}" (${matchedDevice.licensePlate || 'N/A'}) via ${matchStrategy} (score: ${bestScore.toFixed(2)})`);
+                matchStrategies.push(matchStrategy);
+            } else {
+                console.warn(`✗ No match for Fleet #${rucVehicle.fleetNumber} (${rucVehicle.regPlate}) - best score was ${bestScore.toFixed(2)}`);
             }
+
+
 
             matched.push({
                 ...rucVehicle,
                 geotabDevice: matchedDevice,
-                hasGeotabData: !!matchedDevice
+                hasGeotabData: !!matchedDevice,
+                matchStrategy
             });
         }
 
+        // Print matching statistics
         const matchedCount = matched.filter(v => v.hasGeotabData).length;
-        console.log(`Successfully matched ${matchedCount} out of ${rucData.length} vehicles with Geotab devices`);
+        const matchRate = (matchedCount / rucData.length * 100).toFixed(1);
         
-        // If very few matches, log some examples for debugging
-        if (matchedCount < rucData.length * 0.5) {
-            console.warn("Low match rate detected. Sample RUC vehicles:");
-            rucData.slice(0, 5).forEach(vehicle => {
-                console.log(`  Fleet #${vehicle.fleetNumber}: ${vehicle.regPlate} (${vehicle.vehicleDescription})`);
-            });
-        }
+        console.log(`\nMatching Results:`);
+        console.log(`- Total vehicles: ${rucData.length}`);
+        console.log(`- Matched vehicles: ${matchedCount} (${matchRate}%)`);
+        
+        // Show strategy distribution
+        const strategyCounts = matchStrategies.reduce((counts, strategy) => {
+            counts[strategy] = (counts[strategy] || 0) + 1;
+            return counts;
+        }, {});
+        
+        console.log(`\nMatching Strategies Used:`);
+        Object.entries(strategyCounts).forEach(([strategy, count]) => {
+            console.log(`- ${strategy}: ${count} (${(count/matchedCount*100).toFixed(1)}%)`);
+        });
+
         
         return matched;
     };
