@@ -52,44 +52,65 @@ geotab.addin.ruc = function(api, state) {
     // Get current odometer reading for a device
     const getCurrentOdometer = async (deviceId) => {
         try {
-            // Get the latest odometer reading using the correct diagnostic ID
-            const statusData = await api.call("Get", {
-                typeName: "StatusData",
-                search: {
-                    deviceSearch: { id: deviceId },
-                    diagnosticSearch: { id: "DiagnosticOdometerId" }
-                },
-                resultsLimit: 1
-            });
+            // Try multiple diagnostic IDs for odometer data
+            const diagnosticIds = [
+                "DiagnosticOdometerId",
+                "DiagnosticOdometerAdjustmentId", 
+                "DiagnosticEngineOdometerAdjustmentId",
+                "DiagnosticEngineOdometerId"
+            ];
 
-            if (statusData && statusData.length > 0) {
-                // Convert from meters to kilometers and round
-                return Math.round(statusData[0].data / 1000);
+            for (const diagnosticId of diagnosticIds) {
+                try {
+                    const statusData = await api.call("Get", {
+                        typeName: "StatusData",
+                        search: {
+                            deviceSearch: { id: deviceId },
+                            diagnosticSearch: { id: diagnosticId }
+                        },
+                        resultsLimit: 1
+                    });
+
+                    if (statusData && statusData.length > 0 && statusData[0].data) {
+                        const odometerKm = Math.round(statusData[0].data / 1000);
+                        console.log(`Got odometer for device ${deviceId}: ${odometerKm} km using ${diagnosticId}`);
+                        return odometerKm;
+                    }
+                } catch (diagError) {
+                    console.warn(`Failed to get odometer with ${diagnosticId}:`, diagError);
+                    continue;
+                }
             }
 
-            // Fallback: try alternative odometer diagnostic
-            const fallbackData = await api.call("Get", {
+            // If no diagnostic worked, try getting the latest StatusData without specific diagnostic
+            const allStatusData = await api.call("Get", {
                 typeName: "StatusData",
                 search: {
-                    deviceSearch: { id: deviceId },
-                    diagnosticSearch: { id: "DiagnosticOdometerAdjustmentId" }
+                    deviceSearch: { id: deviceId }
                 },
-                resultsLimit: 1
+                resultsLimit: 10
             });
 
-            if (fallbackData && fallbackData.length > 0) {
-                return Math.round(fallbackData[0].data / 1000);
+            // Look for any odometer-related data
+            const odometerData = allStatusData.find(data => 
+                data.diagnostic && 
+                data.diagnostic.name && 
+                data.diagnostic.name.toLowerCase().includes('odometer') &&
+                data.data > 0
+            );
+
+            if (odometerData) {
+                const odometerKm = Math.round(odometerData.data / 1000);
+                console.log(`Found odometer data for device ${deviceId}: ${odometerKm} km`);
+                return odometerKm;
             }
 
-            // If no odometer data available, return a simulated value for testing
-            // In production, this would return 0 or handle the missing data appropriately
-            console.warn(`No odometer data available for device ${deviceId}, using simulated data`);
-            return Math.floor(Math.random() * 50000) + 100000; // Random value between 100k-150k km
+            console.warn(`No odometer data available for device ${deviceId}`);
+            return null; // Return null instead of 0 to indicate no data
 
         } catch (error) {
-            console.warn(`Could not get odometer for device ${deviceId}:`, error);
-            // Return a simulated value for testing purposes
-            return Math.floor(Math.random() * 50000) + 100000;
+            console.error(`Error getting odometer for device ${deviceId}:`, error);
+            return null; // Return null to indicate error
         }
     };
 
@@ -320,12 +341,22 @@ geotab.addin.ruc = function(api, state) {
                 if (vehicle.hasGeotabData) {
                     try {
                         vehicle.currentOdometer = await getCurrentOdometer(vehicle.geotabDevice.id);
+                        if (vehicle.currentOdometer === null) {
+                            console.warn(`No odometer data available for ${vehicle.regPlate}, marking as no data`);
+                            vehicle.hasOdometerData = false;
+                            vehicle.currentOdometer = 0; // Set to 0 for calculation but mark as no data
+                        } else {
+                            vehicle.hasOdometerData = true;
+                        }
                     } catch (error) {
                         console.warn(`Could not get odometer for ${vehicle.regPlate}:`, error);
                         vehicle.currentOdometer = 0;
+                        vehicle.hasOdometerData = false;
                     }
                 } else {
+                    console.warn(`No Geotab device found for ${vehicle.regPlate}`);
                     vehicle.currentOdometer = 0;
+                    vehicle.hasOdometerData = false;
                 }
 
                 // Calculate RUC status
@@ -362,7 +393,10 @@ geotab.addin.ruc = function(api, state) {
                                 ${vehicle.rucPaidTo.toLocaleString()} km
                             </td>
                             <td style="text-align: right;">
-                                ${remainingKm > 0 ? `${remainingKm.toLocaleString()} km` : '<span style="color: #dc3545; font-weight: bold;">EXPIRED</span>'}
+                                ${!vehicle.hasOdometerData ? 
+                                    '<span style="color: #ffc107; font-weight: bold;">NO ODOMETER DATA</span>' :
+                                    remainingKm > 0 ? `${remainingKm.toLocaleString()} km` : '<span style="color: #dc3545; font-weight: bold;">EXPIRED</span>'
+                                }
                             </td>
                             <td style="text-align: center;">
                                 <span class="status-badge ${statusClass}">${statusText}</span>
