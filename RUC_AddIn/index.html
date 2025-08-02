@@ -7,12 +7,21 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div style="padding: 20px; font-family: Arial, sans-serif; background: #f8f9fa; min-height: 100vh;">
+    <!-- Loading spinner -->
+    <div id="loading" style="display: none; text-align: center; padding: 50px;">
+        <div style="font-size: 24px; color: #007bff;">Loading vehicle data...</div>
+        <div style="margin-top: 20px;">
+            <div style="border: 4px solid #f3f3f3; border-top: 4px solid #007bff; border-radius: 50%; width: 40px; height: 40px; animation: spin 2s linear infinite; margin: 0 auto;"></div>
+        </div>
+    </div>
+    
+    <!-- Main content -->
+    <div id="rucAddin" style="padding: 20px; font-family: Arial, sans-serif; background: #f8f9fa; min-height: 100vh; display: none;">
         <div style="max-width: 1200px; margin: 0 auto;">
             <h1 style="color: #28a745; text-align: center; margin-bottom: 30px;">RUC License Management</h1>
             
             <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px;">
-                <h3 style="margin: 0; color: #495057;">Status: <span id="status" style="color: #007bff;">Loading...</span></h3>
+                <h3 style="margin: 0; color: #495057;">Status: <span id="status" style="color: #007bff;">Ready</span></h3>
             </div>
             
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px;">
@@ -45,7 +54,7 @@
                                 <th style="padding: 15px; text-align: center; border-bottom: 2px solid #dee2e6;">Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="vehicle-list">
+                        <tbody id="ruc-table-body">
                             <tr><td colspan="5" style="padding: 40px; text-align: center; color: #6c757d;">Loading vehicles...</td></tr>
                         </tbody>
                     </table>
@@ -57,6 +66,6 @@
     </div>
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-    <script src="main.js"></script>
+    <script src="geotab.js"></script>
 </body>
 </html>

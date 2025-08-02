@@ -1,15 +1,15 @@
 {
   "name": "RUC License Management",
   "supportEmail": "Francis@directt.co.nz",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "items": [
     {
-      "url": "https://Kikorangee.github.io/RUC1/RUC_AddIn/index.html",
-      "path": "RUCLicenseManagement/",
+      "url": "https://kikorangee.github.io/RUC1/RUC_AddIn/index.html",
+      "path": "RUC/",
       "menuName": {
         "en": "RUC License Management"
       },
-      "icon": "https://Kikorangee.github.io/RUC1/RUC_AddIn/ruc-icon.svg"
+      "icon": "https://kikorangee.github.io/RUC1/RUC_AddIn/ruc-icon.svg"
     }
   ],
   "isSigned": false
