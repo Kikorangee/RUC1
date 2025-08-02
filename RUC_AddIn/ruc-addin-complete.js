@@ -73,7 +73,9 @@ geotab.addin.ruc = function(api, state) {
     // Get current odometer reading for a device
     const getCurrentOdometer = async (deviceId) => {
         try {
-            // Try multiple diagnostic IDs for odometer data
+            console.log(`🔍 Attempting to get odometer for device ${deviceId}...`);
+            
+            // Strategy 1: Try standard diagnostic IDs
             const diagnosticIds = [
                 "DiagnosticOdometerId",
                 "DiagnosticOdometerAdjustmentId", 
@@ -94,44 +96,170 @@ geotab.addin.ruc = function(api, state) {
 
                     if (statusData && statusData.length > 0 && statusData[0].data) {
                         const odometerKm = Math.round(statusData[0].data / 1000);
-                        console.log(`Got odometer for device ${deviceId}: ${odometerKm} km using ${diagnosticId}`);
+                        console.log(`✅ Got odometer for device ${deviceId}: ${odometerKm} km using ${diagnosticId}`);
                         return odometerKm;
                     }
                 } catch (diagError) {
-                    console.warn(`Failed to get odometer with ${diagnosticId}:`, diagError);
+                    console.warn(`❌ Failed to get odometer with ${diagnosticId}:`, diagError);
                     continue;
                 }
             }
 
-            // If no diagnostic worked, try getting the latest StatusData without specific diagnostic
+            // Strategy 2: Try LogRecord for odometer data (alternative data source)
+            console.log(`📊 Trying LogRecord data for device ${deviceId}...`);
+            try {
+                const logRecords = await api.call("Get", {
+                    typeName: "LogRecord",
+                    search: {
+                        deviceSearch: { id: deviceId }
+                    },
+                    resultsLimit: 10
+                });
+
+                for (const record of logRecords) {
+                    if (record.odometer && record.odometer > 0) {
+                        const odometerKm = Math.round(record.odometer / 1000);
+                        console.log(`✅ Found odometer in LogRecord for device ${deviceId}: ${odometerKm} km`);
+                        return odometerKm;
+                    }
+                }
+            } catch (logError) {
+                console.warn(`❌ LogRecord search failed for ${deviceId}:`, logError);
+            }
+
+            // Strategy 3: Try Trip data for odometer readings
+            console.log(`🚗 Trying Trip data for device ${deviceId}...`);
+            try {
+                const trips = await api.call("Get", {
+                    typeName: "Trip",
+                    search: {
+                        deviceSearch: { id: deviceId }
+                    },
+                    resultsLimit: 5
+                });
+
+                for (const trip of trips) {
+                    if (trip.distance && trip.distance > 0) {
+                        // Trip distance might give us recent odometer info
+                        console.log(`🚗 Found trip data for device ${deviceId}: distance ${trip.distance}m`);
+                        // This is just distance, not total odometer, so continue searching
+                    }
+                }
+            } catch (tripError) {
+                console.warn(`❌ Trip search failed for ${deviceId}:`, tripError);
+            }
+
+            // Strategy 4: Get ALL StatusData and search comprehensively
+            console.log(`🔍 Comprehensive StatusData search for device ${deviceId}...`);
             const allStatusData = await api.call("Get", {
                 typeName: "StatusData",
                 search: {
                     deviceSearch: { id: deviceId }
                 },
-                resultsLimit: 10
+                resultsLimit: 100 // Increased limit to find more data
             });
 
-            // Look for any odometer-related data
-            const odometerData = allStatusData.find(data => 
-                data.diagnostic && 
-                data.diagnostic.name && 
-                data.diagnostic.name.toLowerCase().includes('odometer') &&
-                data.data > 0
-            );
+            console.log(`📊 Found ${allStatusData.length} status records for device ${deviceId}`);
 
-            if (odometerData) {
-                const odometerKm = Math.round(odometerData.data / 1000);
-                console.log(`Found odometer data for device ${deviceId}: ${odometerKm} km`);
-                return odometerKm;
+            // Look for any odometer-related data with various patterns
+            const odometerPatterns = [
+                'odometer', 'distance', 'mileage', 'km', 'mile', 'total', 'cumulative',
+                'engine', 'vehicle', 'trip', 'counter', 'meter', 'reading'
+            ];
+
+            // Sort by most recent data first
+            allStatusData.sort((a, b) => new Date(b.dateTime) - new Date(a.dateTime));
+
+            for (const data of allStatusData) {
+                if (data.diagnostic && data.diagnostic.name && data.data > 0) {
+                    const diagName = data.diagnostic.name.toLowerCase();
+                    
+                    // Check if diagnostic name contains odometer-related terms
+                    for (const pattern of odometerPatterns) {
+                        if (diagName.includes(pattern)) {
+                            let odometerKm;
+                            
+                            // More sophisticated unit detection
+                            if (data.data > 10000000) {
+                                // Very large number - likely in millimeters or smaller units
+                                odometerKm = Math.round(data.data / 1000000);
+                            } else if (data.data > 1000000) {
+                                // Large number - likely in meters
+                                odometerKm = Math.round(data.data / 1000);
+                            } else if (data.data > 100000) {
+                                // Medium-large number - likely already in km
+                                odometerKm = Math.round(data.data);
+                            } else if (data.data > 1000) {
+                                // Medium number - could be km or need conversion
+                                odometerKm = Math.round(data.data);
+                            } else {
+                                // Small number - might be in thousands of km
+                                odometerKm = Math.round(data.data * 1000);
+                            }
+                            
+                            // Sanity check - odometer should be reasonable (0-1M km)
+                            if (odometerKm > 0 && odometerKm < 1000000) {
+                                console.log(`✅ Found odometer data for device ${deviceId}: ${odometerKm} km using diagnostic "${data.diagnostic.name}" (ID: ${data.diagnostic.id}, Value: ${data.data})`);
+                                return odometerKm;
+                            }
+                        }
+                    }
+                }
             }
 
-            console.warn(`No odometer data available for device ${deviceId}`);
-            return null; // Return null instead of 0 to indicate no data
+            // Strategy 5: Try DeviceStatusInfo for additional device data
+            console.log(`📱 Trying DeviceStatusInfo for device ${deviceId}...`);
+            try {
+                const deviceStatus = await api.call("Get", {
+                    typeName: "DeviceStatusInfo",
+                    search: {
+                        deviceSearch: { id: deviceId }
+                    }
+                });
+
+                if (deviceStatus && deviceStatus.length > 0) {
+                    console.log(`📱 DeviceStatusInfo found for ${deviceId}:`, deviceStatus[0]);
+                }
+            } catch (statusError) {
+                console.warn(`❌ DeviceStatusInfo search failed for ${deviceId}:`, statusError);
+            }
+
+            // Strategy 6: Log all available diagnostics for debugging
+            console.log(`📋 All available diagnostics for device ${deviceId}:`);
+            allStatusData.slice(0, 20).forEach((data, index) => {
+                if (data.diagnostic) {
+                    console.log(`  ${index + 1}. "${data.diagnostic.name}" (ID: ${data.diagnostic.id}) = ${data.data} [${data.dateTime}]`);
+                }
+            });
+
+            // Strategy 7: Get device details for additional context
+            try {
+                const deviceDetails = await api.call("Get", {
+                    typeName: "Device",
+                    search: {
+                        id: deviceId
+                    }
+                });
+
+                if (deviceDetails && deviceDetails.length > 0) {
+                    const device = deviceDetails[0];
+                    console.log(`🚛 Device ${deviceId} details:`, {
+                        name: device.name,
+                        serialNumber: device.serialNumber,
+                        deviceType: device.deviceType?.name || 'Unknown',
+                        vehicleIdentificationNumber: device.vehicleIdentificationNumber || 'N/A'
+                    });
+                }
+            } catch (deviceError) {
+                console.warn(`❌ Could not get device details for ${deviceId}:`, deviceError);
+            }
+
+            console.warn(`❌ No odometer data found for device ${deviceId} after exhaustive search`);
+            return null;
 
         } catch (error) {
-            console.error(`Error getting odometer for device ${deviceId}:`, error);
-            return null; // Return null to indicate error
+            console.error(`❌ Error getting odometer for device ${deviceId}:`, error);
+            return null;
         }
     };
 
@@ -488,17 +616,19 @@ geotab.addin.ruc = function(api, state) {
                 let tableContent = '';
                 
                 for (const vehicle of vehicles) {
-                    const statusClass = `status-${vehicle.rucStatus.status}`;
-                    const statusText = vehicle.rucStatus.badge;
-                    const remainingKm = vehicle.rucStatus.remaining;
+                    // Safely access vehicle properties with fallbacks
+                    const statusClass = vehicle.rucStatus ? `status-${vehicle.rucStatus.status}` : 'status-unknown';
+                    const statusText = vehicle.rucStatus ? vehicle.rucStatus.badge : 'UNKNOWN';
+                    const remainingKm = vehicle.rucStatus ? vehicle.rucStatus.remaining : 0;
+                    const hasValidStatus = vehicle.rucStatus && vehicle.rucStatus.status;
                     
                     tableContent += `
                         <tr>
-                            <td><strong>${vehicle.vehicleDescription}</strong></td>
-                            <td>${vehicle.fleetNumber}</td>
-                            <td><strong>${vehicle.regPlate}</strong></td>
+                            <td><strong>${vehicle.vehicleDescription || 'Unknown Vehicle'}</strong></td>
+                            <td>${vehicle.fleetNumber || 'N/A'}</td>
+                            <td><strong>${vehicle.regPlate || 'N/A'}</strong></td>
                             <td style="text-align: right;">
-                                ${vehicle.rucPaidTo.toLocaleString()} km
+                                ${vehicle.rucPaidTo ? vehicle.rucPaidTo.toLocaleString() : '0'} km
                             </td>
                             <td style="text-align: right;">
                                 ${!vehicle.hasOdometerData ? 
@@ -514,7 +644,7 @@ geotab.addin.ruc = function(api, state) {
                                         `<button class="btn-refresh-odometer" onclick="window.refreshOdometer('${vehicle.regPlate}')" style="background: #17a2b8; color: white; border: none; padding: 4px 8px; border-radius: 3px; font-size: 11px; margin-right: 4px;">Refresh Odometer</button>` : 
                                         ''
                                     }
-                                    ${vehicle.rucStatus.status !== 'ok' ? 
+                                    ${hasValidStatus && vehicle.rucStatus.status !== 'ok' ? 
                                         `<button class="btn-renew" onclick="window.renewLicense('${vehicle.regPlate}')" style="background: #28a745; color: white; border: none; padding: 4px 8px; border-radius: 3px; font-size: 11px;">Renew</button>` : 
                                         ''
                                     }
