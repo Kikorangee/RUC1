@@ -7,7 +7,10 @@ geotab.addin.ruc = function (api, state) {
     const loadRucData = async () => {
         try {
             console.log("Loading vehicles from Geotab API...");
-            
+            console.log("API object:", api);
+            console.log("State object:", state);
+            console.log("User groups:", state.getGroups());
+
             // Show loading spinner
             const loading = document.getElementById('loading');
             const content = document.getElementById('rucAddin');
@@ -86,6 +89,8 @@ geotab.addin.ruc = function (api, state) {
     return {
         initialize: function (api, state, callback) {
             console.log("RUC License Management add-in initialized");
+            console.log("Initialize API object:", api);
+            console.log("Initialize State object:", state);
             loadRucData();
             if (callback) {
                 callback();

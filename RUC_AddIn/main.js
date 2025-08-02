@@ -1,12 +1,16 @@
-// RUC License Management - Direct Working Solution
+// RUC License Management - GeoTab API Integration
 "use strict";
 
 let vehicles = [];
 let api = null;
+let state = null;
 
-function initialize(geotabApi, state, callback) {
+function initialize(geotabApi, stateObj, callback) {
     api = geotabApi;
+    state = stateObj;
     console.log("RUC License Management starting...");
+    console.log("API object:", api);
+    console.log("State object:", state);
     
     // Create interface immediately
     document.body.innerHTML = `
@@ -54,93 +58,115 @@ function initialize(geotabApi, state, callback) {
                         </table>
                     </div>
                 </div>
+                
+                <div id="error-message" style="display: none; background: #f8d7da; color: #721c24; padding: 15px; border-radius: 5px; margin-top: 20px;"></div>
             </div>
         </div>
     `;
     
-    // Load vehicles immediately
-    loadVehicles();
+    // Load vehicles from GeoTab API
+    loadVehiclesFromGeotab();
     if (callback) callback();
 }
 
-function loadVehicles() {
+async function loadVehiclesFromGeotab() {
     const status = document.getElementById('status');
     const vehicleList = document.getElementById('vehicle-list');
+    const errorMsg = document.getElementById('error-message');
     
-    status.textContent = 'Loading vehicle data...';
+    status.textContent = 'Loading vehicle data from GeoTab API...';
+    status.style.color = '#007bff';
+    errorMsg.style.display = 'none';
     
-    // Load directly from GitHub Pages
-    fetch('https://kikorangee.github.io/RUC1/RUC_AddIn/RUC_Data.json')
-        .then(response => response.json())
-        .then(data => {
-            vehicles = data;
-            status.textContent = 'Fleet loaded successfully';
-            status.style.color = '#28a745';
-            
-            // Update counts
-            document.getElementById('total').textContent = vehicles.length;
-            document.getElementById('active').textContent = vehicles.length;
-            
-            // Clear loading message
-            vehicleList.innerHTML = '';
-            
-            // Add all vehicles to table
-            vehicles.forEach((vehicle, i) => {
-                const row = vehicleList.insertRow();
-                
-                const cellVehicle = row.insertCell(0);
-                cellVehicle.textContent = vehicle.vehicleDescription || 'Unknown';
-                cellVehicle.style.padding = '15px';
-                cellVehicle.style.borderBottom = '1px solid #dee2e6';
-                
-                const cellFleet = row.insertCell(1);
-                cellFleet.textContent = vehicle.fleetNumber || '--';
-                cellFleet.style.padding = '15px';
-                cellFleet.style.borderBottom = '1px solid #dee2e6';
-                
-                const cellReg = row.insertCell(2);
-                cellReg.textContent = vehicle.regPlate || '--';
-                cellReg.style.padding = '15px';
-                cellReg.style.borderBottom = '1px solid #dee2e6';
-                cellReg.style.fontWeight = 'bold';
-                
-                const cellRUC = row.insertCell(3);
-                cellRUC.textContent = formatKm(vehicle.rucPaidTo);
-                cellRUC.style.padding = '15px';
-                cellRUC.style.borderBottom = '1px solid #dee2e6';
-                cellRUC.style.textAlign = 'right';
-                cellRUC.style.color = '#28a745';
-                cellRUC.style.fontWeight = 'bold';
-                
-                const cellActions = row.insertCell(4);
-                cellActions.innerHTML = `
-                    <button onclick="getReading(${i})" style="background: #007bff; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin: 2px;">Get Reading</button>
-                    <button onclick="renew(${i})" style="background: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin: 2px;">Renew</button>
-                `;
-                cellActions.style.padding = '15px';
-                cellActions.style.borderBottom = '1px solid #dee2e6';
-                cellActions.style.textAlign = 'center';
-                
-                if (i % 2 === 1) {
-                    row.style.backgroundColor = '#f8f9fa';
-                }
-            });
-        })
-        .catch(error => {
-            status.textContent = 'Error loading data: ' + error.message;
-            status.style.color = '#dc3545';
+    try {
+        console.log("Getting devices from Geotab API...");
+        console.log("User groups:", state.getGroups());
+        
+        // Get all vehicles in user's scope using proven API call
+        const devices = await api.call("Get", {
+            typeName: "Device",
+            search: {
+                groups: state.getGroups()
+            }
         });
+
+        console.log(`Successfully loaded ${devices.length} vehicles from Geotab`);
+        status.textContent = 'Fleet loaded successfully from GeoTab API';
+        status.style.color = '#28a745';
+        
+        if (!devices || devices.length === 0) {
+            status.textContent = 'No vehicles found in your scope';
+            status.style.color = '#ffc107';
+            vehicleList.innerHTML = '<tr><td colspan="5" style="padding: 40px; text-align: center; color: #6c757d;">No vehicles found in your scope.</td></tr>';
+            return;
+        }
+        
+        // Update counts
+        document.getElementById('total').textContent = devices.length;
+        document.getElementById('active').textContent = devices.length;
+        
+        // Clear loading message
+        vehicleList.innerHTML = '';
+        
+        // Add all vehicles to table
+        devices.forEach((device, i) => {
+            const row = vehicleList.insertRow();
+            
+            const cellVehicle = row.insertCell(0);
+            cellVehicle.textContent = device.name || 'Unknown Vehicle';
+            cellVehicle.style.padding = '15px';
+            cellVehicle.style.borderBottom = '1px solid #dee2e6';
+            
+            const cellFleet = row.insertCell(1);
+            cellFleet.textContent = device.serialNumber || '--';
+            cellFleet.style.padding = '15px';
+            cellFleet.style.borderBottom = '1px solid #dee2e6';
+            
+            const cellReg = row.insertCell(2);
+            cellReg.textContent = device.licensePlate || '--';
+            cellReg.style.padding = '15px';
+            cellReg.style.borderBottom = '1px solid #dee2e6';
+            cellReg.style.fontWeight = 'bold';
+            
+            const cellRUC = row.insertCell(3);
+            cellRUC.textContent = 'No RUC logs yet'; // Placeholder since we don't have RUC data yet
+            cellRUC.style.padding = '15px';
+            cellRUC.style.borderBottom = '1px solid #dee2e6';
+            cellRUC.style.textAlign = 'right';
+            cellRUC.style.color = '#28a745';
+            cellRUC.style.fontWeight = 'bold';
+            
+            const cellActions = row.insertCell(4);
+            cellActions.innerHTML = `
+                <button onclick="getReading(${i})" style="background: #007bff; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin: 2px;">Get Reading</button>
+                <button onclick="renew(${i})" style="background: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin: 2px;">Renew</button>
+            `;
+            cellActions.style.padding = '15px';
+            cellActions.style.borderBottom = '1px solid #dee2e6';
+            cellActions.style.textAlign = 'center';
+            
+            if (i % 2 === 1) {
+                row.style.backgroundColor = '#f8f9fa';
+            }
+        });
+    } catch (error) {
+        console.error("Failed to load RUC data:", error);
+        status.textContent = 'Error loading data: ' + error.message;
+        status.style.color = '#dc3545';
+        errorMsg.textContent = 'Error loading data from GeoTab API: ' + error.message;
+        errorMsg.style.display = 'block';
+        vehicleList.innerHTML = '<tr><td colspan="5" style="padding: 40px; text-align: center; color: #dc3545;">Error loading vehicle data. Please check console for details.</td></tr>';
+    }
 }
 
 function getReading(index) {
-    const vehicle = vehicles[index];
-    alert(`Getting odometer reading for ${vehicle.vehicleDescription} (${vehicle.regPlate})`);
+    alert(`Getting odometer reading for vehicle ${index}`);
+    // In a real implementation, this would call the GeoTab API to get the current odometer reading
 }
 
 function renew(index) {
-    const vehicle = vehicles[index];
-    const current = vehicle.rucPaidTo;
-    alert(`Renew RUC for ${vehicle.vehicleDescription}\n\nCurrent: ${formatKm(current)}\nOptions:\n+1000km: ${formatKm(current + 1000)}\n+5000km: ${formatKm(current + 5000)}\n+10000km: ${formatKm(current + 10000)}`);
+    alert(`Renew RUC for vehicle ${index}`);
+    // In a real implementation, this would handle RUC renewal
 }
 
 function formatKm(km) {
@@ -148,5 +174,11 @@ function formatKm(km) {
     return new Intl.NumberFormat().format(Math.round(km)) + ' km';
 }
 
-function focus() { console.log('Add-in focused'); }
-function blur() { console.log('Add-in blurred'); }
+function focus() { 
+    console.log('Add-in focused - refreshing data');
+    // In a real implementation, this would refresh the data from the GeoTab API
+}
+
+function blur() { 
+    console.log('Add-in blurred');
+}

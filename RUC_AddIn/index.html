@@ -42,6 +42,9 @@
         geotab.addin.ruc = function (api, state) {
             'use strict';
             console.log("RUC add-in function called");
+            console.log("API object:", api);
+            console.log("State object:", state);
+            console.log("User groups:", state.getGroups());
 
             const loadRucData = async () => {
                 try {
@@ -122,6 +125,7 @@
         };
         
         console.log("RUC script loaded completely");
+
     </script>
 </body>
 </html>
