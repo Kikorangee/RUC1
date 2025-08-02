@@ -1,20 +1,41 @@
 // RUC License Management - GeoTab API Integration
 "use strict";
 
-let vehicles = [];
 let api = null;
 let state = null;
 
+// Initialize function - called by GeoTab when the add-in is loaded
 function initialize(geotabApi, stateObj, callback) {
+    console.log("RUC License Management initialize function called");
+    console.log("API object:", geotabApi);
+    console.log("State object:", stateObj);
+    
+    // Store API and state references
     api = geotabApi;
     state = stateObj;
-    console.log("RUC License Management starting...");
-    console.log("API object:", api);
-    console.log("State object:", state);
     
     // Load vehicles from GeoTab API
     loadVehiclesFromGeotab();
-    if (callback) callback();
+    
+    // Call the callback to indicate initialization is complete
+    if (callback) {
+        callback();
+    }
+}
+
+// Focus function - called when the add-in gains focus
+function focus(geotabApi, stateObj) {
+    console.log("RUC License Management focus function called");
+    // Refresh data when user returns to the add-in
+    if (api) {
+        loadVehiclesFromGeotab();
+    }
+}
+
+// Blur function - called when the add-in loses focus
+function blur() {
+    console.log("RUC License Management blur function called");
+    // Could pause updates here if needed
 }
 
 async function loadVehiclesFromGeotab() {
@@ -26,7 +47,7 @@ async function loadVehiclesFromGeotab() {
     
     // Show loading status
     if (statusElement) {
-        statusElement.textContent = 'Loading vehicle data from GeoTab API...';
+        statusElement.textContent = 'Loading vehicle data from Geotab API...';
         statusElement.style.color = '#007bff';
     }
     
@@ -37,20 +58,18 @@ async function loadVehiclesFromGeotab() {
     
     try {
         console.log("Getting devices from Geotab API...");
-        console.log("User groups:", state.getGroups());
         
         // Get all vehicles in user's scope using proven API call
+        // Note: In the new API approach, we don't use state.getGroups()
         const devices = await api.call("Get", {
-            typeName: "Device",
-            search: {
-                groups: state.getGroups()
-            }
+            typeName: "Device"
+            // Removed groups search as it's not needed in this context
         });
 
         console.log(`Successfully loaded ${devices.length} vehicles from Geotab`);
         
         if (statusElement) {
-            statusElement.textContent = 'Fleet loaded successfully from GeoTab API';
+            statusElement.textContent = 'Fleet loaded successfully from Geotab API';
             statusElement.style.color = '#28a745';
         }
         
@@ -132,7 +151,7 @@ async function loadVehiclesFromGeotab() {
         }
         
         if (errorMsg) {
-            errorMsg.textContent = 'Error loading data from GeoTab API: ' + error.message;
+            errorMsg.textContent = 'Error loading data from Geotab API: ' + error.message;
             errorMsg.style.display = 'block';
         }
         
@@ -152,16 +171,9 @@ function renew(index) {
     // In a real implementation, this would handle RUC renewal
 }
 
-function formatKm(km) {
-    if (!km) return '--';
-    return new Intl.NumberFormat().format(Math.round(km)) + ' km';
-}
-
-function focus() { 
-    console.log('Add-in focused - refreshing data');
-    // In a real implementation, this would refresh the data from the GeoTab API
-}
-
-function blur() { 
-    console.log('Add-in blurred');
-}
+// This is needed for the new GeoTab add-in approach
+window.initialize = initialize;
+window.focus = focus;
+window.blur = blur;
+window.getReading = getReading;
+window.renew = renew;
