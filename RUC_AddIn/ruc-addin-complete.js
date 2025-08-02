@@ -10,14 +10,16 @@ geotab.addin.ruc = function(api, state) {
     // Load RUC data from JSON file
     const loadRucDataFromFile = async () => {
         try {
-            // Use full GitHub Pages URL when running in MyGeotab
-            const dataUrl = 'https://kikorangee.github.io/RUC1/RUC_AddIn/RUC_Data.json';
+            // Use full GitHub Pages URL when running in MyGeotab with cache busting
+            const timestamp = new Date().getTime();
+            const dataUrl = `https://kikorangee.github.io/RUC1/RUC_AddIn/RUC_Data.json?v=${timestamp}`;
+            console.log(`Loading RUC data from: ${dataUrl}`);
             const response = await fetch(dataUrl);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             rucData = await response.json();
-            console.log(`Loaded ${rucData.length} vehicles from RUC_Data.json`);
+            console.log(`Successfully loaded ${rucData.length} vehicles from RUC_Data.json`);
             return rucData;
         } catch (error) {
             console.error('Error loading RUC data:', error);
