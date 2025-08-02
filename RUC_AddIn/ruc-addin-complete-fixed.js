@@ -1,4 +1,4 @@
-// RUC License Management - Complete Implementation
+// RUC License Management - Complete Implementation with Fixed Unit Conversion
 "use strict";
 
 geotab.addin.ruc = function(api, state) {
@@ -188,8 +188,6 @@ geotab.addin.ruc = function(api, state) {
                                 patternMatches++;
                                 console.log(`  🔍 Pattern match "${pattern}" in "${data.diagnostic.name}": ${data.data} (${data.dateTime})`);
                                 
-                                let odometerKm;
-                                
                                 // More sophisticated unit detection based on diagnostic name and value
                                 let odometerKm;
                                 const diagNameLower = data.diagnostic.name.toLowerCase();
@@ -205,32 +203,43 @@ geotab.addin.ruc = function(api, state) {
                                     console.log(`  🔧 Detected millimeters unit from name "${data.diagnostic.name}", converting ${data.data}mm to ${odometerKm}km`);
                                 } else {
                                     // Use value-based detection with more conservative approach
-                                    if (data.data > 100000000) {
-                                        // Very large number (>100M) - likely in millimeters
+                                    if (data.data > 1000000000) {
+                                        // Very large number (>1B) - likely in millimeters
                                         odometerKm = Math.round(data.data / 1000000);
                                         console.log(`  🔧 Very large value ${data.data}, assuming millimeters, converted to ${odometerKm}km`);
-                                    } else if (data.data > 1000000) {
-                                        // Large number (1M-100M) - likely in meters
+                                    } else if (data.data > 10000000) {
+                                        // Large number (10M-1B) - likely in meters
                                         odometerKm = Math.round(data.data / 1000);
                                         console.log(`  🔧 Large value ${data.data}, assuming meters, converted to ${odometerKm}km`);
+                                    } else if (data.data > 1000000) {
+                                        // Medium-large number (1M-10M) - could be km or meters
+                                        // Check if it's reasonable as km first
+                                        const asKm = Math.round(data.data);
+                                        if (asKm < 2000000) { // Less than 2M km is reasonable
+                                            odometerKm = asKm;
+                                            console.log(`  🔧 Medium-large value ${data.data}, reasonable as kilometers, result: ${odometerKm}km`);
+                                        } else {
+                                            // Too large to be km, must be meters
+                                            odometerKm = Math.round(data.data / 1000);
+                                            console.log(`  🔧 Medium-large value ${data.data}, too large for km, assuming meters, converted to ${odometerKm}km`);
+                                        }
                                     } else if (data.data > 500000) {
-                                        // Medium-large number (500K-1M) - could be km or meters, check reasonableness
+                                        // Medium number (500K-1M) - could be km or meters, check reasonableness
                                         const asKm = Math.round(data.data);
                                         const asMeters = Math.round(data.data / 1000);
                                         // Most vehicles don't exceed 500,000 km, so if > 500K, likely meters
                                         odometerKm = asMeters;
-                                        console.log(`  🔧 Medium-large value ${data.data}, assuming meters due to size, converted to ${odometerKm}km`);
+                                        console.log(`  🔧 Medium value ${data.data}, assuming meters due to size, converted to ${odometerKm}km`);
                                     } else if (data.data > 1000) {
-                                        // Medium number (1K-500K) - likely already in km
+                                        // Small-medium number (1K-500K) - likely already in km
                                         odometerKm = Math.round(data.data);
-                                        console.log(`  🔧 Medium value ${data.data}, assuming kilometers, result: ${odometerKm}km`);
+                                        console.log(`  🔧 Small-medium value ${data.data}, assuming kilometers, result: ${odometerKm}km`);
                                     } else {
-                                        // Small number (<1K) - might be in thousands of km or just low km
+                                        // Small number (<1K) - likely in km
                                         odometerKm = Math.round(data.data);
                                         console.log(`  🔧 Small value ${data.data}, assuming kilometers, result: ${odometerKm}km`);
                                     }
                                 }
-=======
                                 
                                 // Sanity check - odometer should be reasonable (0-1M km)
                                 if (odometerKm > 0 && odometerKm < 1000000) {
@@ -729,9 +738,12 @@ geotab.addin.ruc = function(api, state) {
                                 ${vehicle.rucPaidTo ? vehicle.rucPaidTo.toLocaleString() : '0'} km
                             </td>
                             <td style="text-align: right;">
-                                ${!vehicle.hasOdometerData ? 
+                                ${vehicle.currentOdometer === null || vehicle.currentOdometer === undefined ? 
                                     '<span style="color: #ffc107; font-weight: bold;">NO ODOMETER DATA</span>' :
-                                    remainingKm > 0 ? `${remainingKm.toLocaleString()} km` : '<span style="color: #dc3545; font-weight: bold;">EXPIRED</span>'
+                                    remainingKm > 0 ? `${remainingKm.toLocaleString()} km remaining` : '<span style="color: #dc3545; font-weight: bold;">EXPIRED</span>'
+                                }
+                                ${vehicle.currentOdometer ? 
+                                    `<br><small style="color: #6c757d;">Current: ${vehicle.currentOdometer.toLocaleString()} km</small>` : ''
                                 }
                             </td>
                             <td style="text-align: center;">
