@@ -346,10 +346,10 @@ function updateTableRow(index, vehicle) {
         // Update current odometer (column 4)
         row.cells[4].textContent = vehicle.currentOdometer ? formatNumber(vehicle.currentOdometer) : '--';
         
-        // Update remaining km (column 5)
+        // Update remaining km (column 6)
         row.cells[6].textContent = vehicle.remainingKm !== undefined ? formatNumber(Math.max(0, vehicle.remainingKm)) : '--';
         
-        // Update license options (column 6)
+        // Update license options (column 7)
         const newLicenseWith1000 = vehicle.rucPaidTo + 1000;
         const newLicenseWith5000 = vehicle.rucPaidTo + 5000;
         const newLicenseWith10000 = vehicle.rucPaidTo + 10000;
@@ -362,7 +362,7 @@ function updateTableRow(index, vehicle) {
             </div>
         `;
         
-        // Update status badge (column 7)
+        // Update status badge (column 8)
         row.cells[8].innerHTML = getStatusBadge(vehicle.remainingKm);
     }
 }
