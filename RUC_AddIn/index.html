@@ -1,135 +1,141 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RUC License Management</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="utf-8">
+    <title>RUC Details</title>
+    <link rel="stylesheet" href__="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" href__="style.css">
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>RUC License Management</h1>
-      <p class="subtitle">Road User Charge License Monitoring & Renewal System</p>
-    </header>
-    
-    <!-- Status Bar -->
-    <div id="statusBar" class="status-bar">
-      <span id="lastUpdated">Last Updated: --</span>
-      <span id="connectionStatus" class="status-connected">Connected</span>
+    <!-- NEW: Simplified loading spinner -->
+    <div id="loading" class="text-center">
+        <div class="spinner-container">
+            <div class="spinner"></div>
+            <p>Loading vehicle RUC data...</p>
+        </div>
     </div>
-    
-    <!-- Alerts Section -->
-    <section id="alertSection" class="alert-section">
-      <h2>⚠️ License Expiry Alerts</h2>
-      <div id="alertsContainer" class="alerts-container">
-        <p class="no-alerts">No vehicles require immediate attention</p>
-      </div>
-    </section>
-    
-    <!-- Summary Cards -->
-    <div class="summary-cards">
-      <div class="card">
-        <h3>Total Vehicles</h3>
-        <span id="totalVehicles" class="card-number">--</span>
-      </div>
-      <div class="card alert-card">
-        <h3>Alerts</h3>
-        <span id="alertCount" class="card-number">0</span>
-      </div>
-      <div class="card">
-        <h3>Active Licenses</h3>
-        <span id="activeLicenses" class="card-number">--</span>
-      </div>
-    </div>
-    
-    <!-- Fleet Data Table -->
-    <section id="fleetSection" class="fleet-section">
-      <div class="section-header">
-        <h2>Fleet Overview</h2>
-        <button id="refreshBtn" class="btn-refresh">Refresh Data</button>
-      </div>
-      
-      <div class="table-container">
-        <table id="fleetTable" class="fleet-table">
-          <thead>
-            <tr>
-              <th>Vehicle Description</th>
-              <th>Fleet #</th>
-              <th>Registration</th>
-              <th>License Valid To (km)</th>
-              <th>Current Odometer (km)</th>
-              <th>Get Reading</th>
-              <th>Remaining (km)</th>
-              <th>New License Options</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <!-- Table rows will be populated dynamically -->
-          </tbody>
+
+    <!-- NEW: Error message container -->
+    <div id="error-message" class="alert alert-danger" style="display:none;"></div>
+
+    <!-- Container for the add-in content -->
+    <div id="rucAddin" style="display:none;">
+        <h2>Vehicle RUC Details</h2>
+        <p>This list shows the latest RUC status logs for your vehicles.</p>
+        <table class="table table-striped table-bordered">
+            <thead>
+                <tr>
+                    <th>Vehicle</th>
+                    <th>Last RUC Log Date</th>
+                    <th>Odometer (km)</th>
+                    <th>Distance (km)</th>
+                    <th>RUC Label Number</th>
+                </tr>
+            </thead>
+            <tbody id="ruc-table-body">
+                <!-- Data will be inserted here by JavaScript -->
+            </tbody>
         </table>
-      </div>
-    </section>
-    
-    <!-- Loading Overlay -->
-    <div id="loadingOverlay" class="loading-overlay">
-      <div class="loading-spinner"></div>
-      <p>Loading fleet data...</p>
     </div>
-    
-    <!-- Error Message Display -->
-    <div id="errorContainer" class="error-container hidden">
-      <div class="error-content">
-        <h3>⚠️ Error</h3>
-        <p id="errorMessage"></p>
-        <button id="dismissError" class="btn-dismiss">Dismiss</button>
-      </div>
-    </div>
-    
-    <!-- Renewal Modal -->
-    <div id="renewalModal" class="modal hidden">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h3>Renew RUC License</h3>
-          <button id="closeModal" class="btn-close">&times;</button>
-        </div>
-        <div class="modal-body">
-          <p>Vehicle: <span id="modalVehicleName"></span></p>
-          <p>Current License Valid To: <span id="modalCurrentLimit"></span> km</p>
-          <p>Current Odometer: <span id="modalCurrentOdometer"></span> km</p>
-          
-          <div class="renewal-options">
-            <h4>Select Renewal Option:</h4>
-            <div class="option-cards">
-              <div class="option-card" data-value="1000">
-                <div class="option-title">1,000 km</div>
-                <div class="option-price">Standard</div>
-              </div>
-              <div class="option-card" data-value="5000">
-                <div class="option-title">5,000 km</div>
-                <div class="option-price">Economy</div>
-              </div>
-              <div class="option-card" data-value="10000">
-                <div class="option-title">10,000 km</div>
-                <div class="option-price">Best Value</div>
-              </div>
-            </div>
-          </div>
-          
-          <div class="renewal-summary hidden">
-            <p>New License Valid To: <span id="newLicenseLimit"></span> km</p>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button id="confirmRenewal" class="btn-primary" disabled>Confirm Renewal</button>
-          <button id="cancelRenewal" class="btn-secondary">Cancel</button>
-        </div>
-      </div>
-    </div>
-  </div>
-  
-  <script src="main.js"></script>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="geotab.js"></script>
+
+    <!-- REFACTORED: Complete script rewrite for efficiency and reliability -->
+    <script>
+        geotab.addin.ruc = function (api, state) {
+            'use strict';
+
+            // Function to fetch and display data
+            // Using modern async/await for clarity and reliability
+            const loadRucData = async () => {
+                try {
+                    // 1. Get all vehicles in the user's scope in one call
+                    const vehicles = await api.call("Get", {
+                        typeName: "Device",
+                        search: {
+                            groups: state.getGroups()
+                        }
+                    });
+
+                    if (!vehicles || vehicles.length === 0) {
+                        $('#loading').hide();
+                        $('#rucAddin').show().find('tbody').html('<tr><td colspan="5">No vehicles found in your scope.</td></tr>');
+                        return;
+                    }
+
+                    const vehicleIds = vehicles.map(v => v.id);
+
+                    // 2. Get all relevant DutyStatusLogs for all vehicles in ONE call
+                    // This is vastly more efficient than one call per vehicle
+                    const statusLogs = await api.call("Get", {
+                        typeName: "DutyStatusLog",
+                        search: {
+                            deviceSearch: { id: vehicleIds },
+                            diagnosticSearch: { id: "diagnosticRUCDistanceId" }
+                        }
+                    });
+
+                    // 3. Process the logs for easy lookup
+                    const logsByVehicleId = {};
+                    for (const log of statusLogs) {
+                        const vehicleId = log.device.id;
+                        // Store only the latest log for each vehicle
+                        if (!logsByVehicleId[vehicleId] || new Date(log.dateTime) > new Date(logsByVehicleId[vehicleId].dateTime)) {
+                            logsByVehicleId[vehicleId] = log;
+                        }
+                    }
+
+                    // 4. Build the HTML table content
+                    let tableContent = '';
+                    for (const vehicle of vehicles) {
+                        const latestLog = logsByVehicleId[vehicle.id];
+                        
+                        // Use Intl.NumberFormat for better number display
+                        const odometer = latestLog ? new Intl.NumberFormat('en-NZ').format(Math.round(latestLog.odometer / 1000)) : 'N/A';
+                        const distance = latestLog ? new Intl.NumberFormat('en-NZ').format(latestLog.distance) : 'N/A';
+
+                        tableContent += `
+                            <tr>
+                                <td>${vehicle.name}</td>
+                                <td>${latestLog ? new Date(latestLog.dateTime).toLocaleString('en-NZ') : 'No RUC Log'}</td>
+                                <td>${odometer}</td>
+                                <td>${distance}</td>
+                                <td>${latestLog ? latestLog.notes || 'N/A' : 'N/A'}</td>
+                            </tr>
+                        `;
+                    }
+                    
+                    // 5. Display the data and hide the spinner
+                    $('#ruc-table-body').html(tableContent);
+                    $('#loading').hide();
+                    $('#rucAddin').show();
+
+                } catch (error) {
+                    // If anything fails, show an error message
+                    console.error("Failed to load RUC data:", error);
+                    $('#loading').hide();
+                    $('#error-message').text('An error occurred while loading data: ' + error.message).show();
+                }
+            };
+
+            return {
+                initialize: function (api, state, callback) {
+                    // When the add-in starts, call our main function
+                    loadRucData();
+                    if (callback) {
+                        callback();
+                    }
+                },
+                focus: function (api, state) {
+                    // You could optionally refresh data when the user clicks back to the tab
+                    // loadRucData(); 
+                },
+                blur: function () {
+                    // Fires when the user leaves the add-in
+                }
+            };
+        };
+    </script>
 </body>
 </html>
