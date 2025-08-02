@@ -1,7 +1,7 @@
 // RUC License Management - Final Working Version
 "use strict";
 
-geotab.addin.ruc = function (api, state) {
+geotab.addin.ruc = function(api, state) {
     let vehicles = [];
 
     const loadRucData = async () => {
@@ -92,18 +92,18 @@ geotab.addin.ruc = function (api, state) {
     };
 
     return {
-        initialize: function (api, state, callback) {
+        initialize: function(api, state, callback) {
             console.log("RUC License Management add-in initialized");
             loadRucData();
             if (callback) {
                 callback();
             }
         },
-        focus: function (api, state) {
+        focus: function(api, state) {
             console.log("RUC add-in focused - refreshing data");
             loadRucData();
         },
-        blur: function () {
+        blur: function() {
             console.log("RUC add-in blurred");
         }
     };
